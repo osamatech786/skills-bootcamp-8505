@@ -1173,7 +1173,7 @@ with st.spinner('Wait for it...'):
 
         learner_email = [st.session_state.email]
         
-        subject_team = f"Skills_Bootcamp Name: {st.session_state.selected_option} {st.session_state.first_name}_{st.session_state.sir_name} Submission Date: {date.today()}"
+        subject_team = f"Skills_Bootcamp: {st.session_state.selected_option} {st.session_state.first_name}_{st.session_state.sir_name} Submission Date: {date.today()}"
         body_team = "Prevista Skills Bootcamp Form submitted. Please find attached files."
 
         subject_learner = "Thank You for Your Interest in The Skills Bootcamp!"
