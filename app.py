@@ -10,7 +10,7 @@ import smtplib
 from email.message import EmailMessage
 import shutil
 import re
-import streamlit.components.v1 as components
+import time
 
 # Set page configuration with a favicon
 st.set_page_config(
@@ -946,6 +946,11 @@ elif st.session_state.step == 9:
 
     if st.button("Submit"):
         if is_signature_drawn(st.session_state.signature) and st.session_state.date:
+            time.sleep(1)
+            st.write("**Thank you for completing the enrollment form!**")
+            st.write("Please wait while we are still processing. . . . .")
+            time.sleep(1)
+
             st.session_state.submission_done = True
             st.session_state.step = 10
             st.experimental_rerun()
@@ -954,261 +959,263 @@ elif st.session_state.step == 9:
 
 
 elif st.session_state.step == 10:
-    st.write("**Thank you for completing the enrollment form!**")
-    st.write("Please wait while we are still processing. . . . .")
+    st.info('Still Processing. . . .', icon="ℹ️")
+    time.sleep(1)
+
 
 # ####################################################################################################################################
 
-# Generate and save the document if form is submitted
-if st.session_state.submission_done:
-    # FILL TEMPLATE:
-    placeholder_values = {
-        'ph7': st.session_state.title,
-        'ph1': st.session_state.first_name,
-        'ph2': st.session_state.sir_name,
-        'ph8': st.session_state.preferred_name,
-        'ph9': st.session_state.previous_name,
-        'ph55': st.session_state.home_address,
-        'ph4': st.session_state.postcode,
-        'ph56': st.session_state.previous_postcode_country,
-        'ph34': st.session_state.dob.strftime("%d-%m-%Y"),
+with st.spinner('Wait for it...'):
+    # Generate and save the document if form is submitted
+    if st.session_state.submission_done:
+        # FILL TEMPLATE:
+        placeholder_values = {
+            'ph7': st.session_state.title,
+            'ph1': st.session_state.first_name,
+            'ph2': st.session_state.sir_name,
+            'ph8': st.session_state.preferred_name,
+            'ph9': st.session_state.previous_name,
+            'ph55': st.session_state.home_address,
+            'ph4': st.session_state.postcode,
+            'ph56': st.session_state.previous_postcode_country,
+            'ph34': st.session_state.dob.strftime("%d-%m-%Y"),
+            
+            'ph57': st.session_state.current_age,
+            'ph3': st.session_state.ni_number,
+            'ph58': st.session_state.home_number,
+            'ph6': st.session_state.mobile_number,
+            'ph5': st.session_state.email,
+
+            'ph119': st.session_state.ethnicity_vars['ethnicity_31'],
+            'ph120': st.session_state.ethnicity_vars['ethnicity_32'],
+            'ph121': st.session_state.ethnicity_vars['ethnicity_33'],
+            'ph122': st.session_state.ethnicity_vars['ethnicity_34'],
+            'ph123': st.session_state.ethnicity_vars['ethnicity_35'],
+            'ph124': st.session_state.ethnicity_vars['ethnicity_36'],
+            'ph125': st.session_state.ethnicity_vars['ethnicity_37'],
+            'ph126': st.session_state.ethnicity_vars['ethnicity_38'],
+            'ph127': st.session_state.ethnicity_vars['ethnicity_39'],
+            'ph128': st.session_state.ethnicity_vars['ethnicity_40'],
+            'ph129': st.session_state.ethnicity_vars['ethnicity_41'],
+            'ph130': st.session_state.ethnicity_vars['ethnicity_42'],
+            'ph131': st.session_state.ethnicity_vars['ethnicity_43'],
+            'ph132': st.session_state.ethnicity_vars['ethnicity_44'],
+            'ph133': st.session_state.ethnicity_vars['ethnicity_45'],
+            'ph134': st.session_state.ethnicity_vars['ethnicity_46'],
+            'ph135': st.session_state.ethnicity_vars['ethnicity_47'],
+            'ph136': st.session_state.ethnicity_vars['ethnicity_48'],
+            'ph59': st.session_state.ph59,
+            'ph60': st.session_state.ph60,
+            'ph61': st.session_state.ph61,
+            'ph62': st.session_state.ph62,
+            # 'ph10': st.session_state.highest_education,
+            # 'ph11': st.session_state.institution_name,
+            # 'ph12': st.session_state.year_of_completion,
+            # 'ph13': st.session_state.completed_level_6_or_above,
+            # 'ph14': st.session_state.subject,
+            # 'ph15': st.session_state.date_applied,
+            # 'ph16': st.session_state.placeholder_16,
+            # 'ph17': st.session_state.placeholder_17,
+            # 'ph18': st.session_state.placeholder_18,
+            # 'ph19': st.session_state.placeholder_19,
+            'ph40': st.session_state.emergency_contact_name,
+            'ph41': st.session_state.emergency_contact_relationship,
+            'ph42': st.session_state.emergency_contact_phone,
+            'ph43': st.session_state.home_tel_no,
+
+            'ph63': st.session_state.ph63,
+            'ph64': st.session_state.ph64,
+            'ph65': st.session_state.ph65,
+            'ph66': st.session_state.ph66,
+            'ph67': st.session_state.ph67,
+            'ph68': st.session_state.ph68,
+            'ph69': st.session_state.ph69,
+            'ph70': st.session_state.ph70,
+            'ph71': st.session_state.ph71,
+            'ph72': st.session_state.ph72,
+            'ph73': st.session_state.ph73,
+            'ph74': st.session_state.ph74,        
+
+            'ph75': st.session_state.ph75,
+            'ph76': st.session_state.ph76,
+            'ph77': st.session_state.ph77,
+            'ph78': st.session_state.ph78,
+            'ph79a': st.session_state.ph79a,
+            'ph79b': st.session_state.ph79b,
+            'ph79c': st.session_state.ph79c,
+            'ph79d': st.session_state.ph79d,
+            'ph80': st.session_state.ph80,
+            'ph81': st.session_state.ph81,
+            'ph82': st.session_state.ph82,
+
+            'ph83': st.session_state.ph83,  # Less than 6 months
+            'ph84': st.session_state.ph84,  # 6-11 months
+            'ph85': st.session_state.ph85,  # 12-23 months
+            'ph86': st.session_state.ph86,  # 24-35 months
+            'ph87': st.session_state.ph87,   # 36 months or over
+
+            'ph88': st.session_state.ph88,  # In receipt of JSA
+            'ph89': st.session_state.ph89,  # In receipt of ESA (Part of WRAG group)
+            'ph90': st.session_state.ph90,  # In receipt of Universal Credit
+            'ph91': st.session_state.ph91,  # In receipt of another State Benefit
+            'ph92': st.session_state.ph92,   # None
+
+            'ph93': st.session_state.ph93,  # Name of Employer
+            'ph94': st.session_state.ph94,  # Postcode
+            'ph95': st.session_state.ph95,  # Current Job Role
+            'ph96': st.session_state.ph96,  # Current Hourly Rate
+            'ph97y': st.session_state.ph97y,   # Attending Bootcamp via Employer (Yes/No)
+            'ph97n': st.session_state.ph97n,   # Attending Bootcamp via Employer (Yes/No)
+
+            'ph98': st.session_state.ph98,  # Yes (Full-time employment)
+            'ph99': st.session_state.ph99,  # Yes (Part-time employed)
+            'ph100': st.session_state.ph100,  # Yes (Self-employed)
+            'ph101': st.session_state.ph101,  # No
+
+            'ph102': st.session_state.ph102,  # Major Group
+            'ph103': st.session_state.ph103,  # Managers, directors and senior officials
+            'ph104': st.session_state.ph104,  # Professional occupations
+            'ph105': st.session_state.ph105,  # Associate professional and technical occupations
+            'ph106': st.session_state.ph106,  # Administrative and secretarial occupations
+            'ph107': st.session_state.ph107,  # Skilled trades occupations
+            'ph108': st.session_state.ph108,  # Caring, leisure and other service occupations
+            'ph109': st.session_state.ph109,  # Sales and customer service occupations
+            'ph110': st.session_state.ph110,  # Process, plant and machine operatives
+            'ph111': st.session_state.ph111,   # Elementary occupations
+
+            'ph112': st.session_state.ph112,  # Agriculture / forestry / fishing
+            'ph113': st.session_state.ph113,  # Distribution / hotels / restaurants
+            'ph114': st.session_state.ph114,  # Public admin / education / health
+            'ph115': st.session_state.ph115,  # Banking / finance
+            'ph116': st.session_state.ph116,  # Energy / water
+            'ph117': st.session_state.ph117,  # Transport / communication
+            'ph118': st.session_state.ph118,  # Construction
+            'ph119': st.session_state.ph119,  # Manufacturing
+            'ph120': st.session_state.ph120,   # Other services (Please specify below)
+            'ph120a': st.session_state.ph120a,   # Other services (Specifiy)
+
+            'ph121': st.session_state.ph121,  # No
+            'ph122': st.session_state.ph122,  # Yes
+            'ph123': st.session_state.ph123,  # Other
+            'ph124': st.session_state.ph124,  # Epilepsy
+            'ph125': st.session_state.ph125,  # Hearing Impairment
+            'ph126': st.session_state.ph126,  # Diagnosed mental health condition
+            'ph127': st.session_state.ph127,  # Moderate Learning Difficulty
+            'ph128': st.session_state.ph128,  # Physical Disability
+            'ph129': st.session_state.ph129,  # Other Specific Learning Difficulty (e.g. Dyspraxia)
+            'ph130': st.session_state.ph130,  # Profound/Complex Disabilities
+            'ph131': st.session_state.ph131,  # Severe Learning Difficulty
+            'ph132': st.session_state.ph132,  # Social, Emotional & Behavioural Difficulties
+            'ph133': st.session_state.ph133,  # Speech, Language and Communication needs
+            'ph134': st.session_state.ph134,  # Temporary Disability after Illness or accident
+            'ph135': st.session_state.ph135,  # Visual Impairment-excluding glasses/contact lenses
+            'ph136': st.session_state.ph136,  # Prefer not to say
+            'ph137': st.session_state.ph137,  # Are you a wheelchair user? + Other specify text
+            'ph138': st.session_state.ph138,  # Allergy
+            'ph139': st.session_state.ph139,  # Asperger’s Syndrome
+            'ph140': st.session_state.ph140,  # Asthma
+            'ph141': st.session_state.ph141,  # Autism Spectrum Condition
+            'ph142': st.session_state.ph142,  # Cystic Fibrosis
+            'ph143': st.session_state.ph143,  # Diabetes
+            'ph144': st.session_state.ph144,  # Disability Affecting Mobility
+            'ph145': st.session_state.ph145,  # Dyscalculia
+            'ph146': st.session_state.ph146,  # Dyslexia
+            'impactful_condition': st.session_state.impactful_condition,  # Most impactful condition
+            'confidential_interview': st.session_state.confidential_interview,  # Confidential interview checkbox
+
+            'ph147': st.session_state.ph147,  # Employer
+            'ph148': st.session_state.ph148,  # Job Centre
+            'ph149': st.session_state.ph149,  # Social Media
+            'ph150': st.session_state.ph150,  # Local Press
+            'ph151': st.session_state.ph151,  # Search Engine
+            'ph152': st.session_state.ph152,  # Friends / Family
+            'ph153': st.session_state.ph153,  # Other Source
+            'other_source': st.session_state.other_source,  # Other Source (specified)
+
+            'ph154': st.session_state.ph154,  # About courses or learning opportunities
+            'ph155': st.session_state.ph155,  # For surveys and research
+            'ph156': st.session_state.ph156,  # By post
+            'ph157': st.session_state.ph157,  # By phone
+            'ph158': st.session_state.ph158,  # By email
+            'ph159': st.session_state.ph159,   # Consent to being filmed
+
+            'ph35m': st.session_state.ph35m,
+            'ph35f': st.session_state.ph35f,
+            'ph50': date.today().strftime("%d-%m-%Y"),
+        }
+
+        template_file = "ph_skills_bootcamp.docx"
+        modified_file = f"SkillsBootcamp_Form_Submission_{st.session_state.first_name}_{st.session_state.sir_name}.docx"
+
+        signature_path = 'signature_image.png'
+        signature_image = PILImage.fromarray(
+            st.session_state.signature.astype('uint8'), 'RGBA')
+        signature_image.save(signature_path)
+
+        replace_placeholders(template_file, modified_file, placeholder_values, signature_path)
+
+
+
+    # Email
+        # Sender email credentials
+        # Credentials: Streamlit host st.secrets
+        sender_email = st.secrets["sender_email"]
+        sender_password = st.secrets["sender_password"]
+
+        # Credentials: Local env
+        # load_dotenv()                                     # uncomment import of this library!
+        # sender_email = os.getenv('EMAIL')
+        # sender_password = os.getenv('PASSWORD')
+        team_email = [sender_email]
+        # team_email = ['muhammadoa@prevista.co.uk']
+        # receiver_email = sender_email
+        # receiver_email = 'muhammadoa@prevista.co.uk'
+
+        learner_email = [st.session_state.email]
         
-        'ph57': st.session_state.current_age,
-        'ph3': st.session_state.ni_number,
-        'ph58': st.session_state.home_number,
-        'ph6': st.session_state.mobile_number,
-        'ph5': st.session_state.email,
+        subject_team = f"Skills_Bootcamp Name: {st.session_state.selected_option} {st.session_state.first_name}_{st.session_state.sir_name} Submission Date: {date.today()}"
+        body_team = "Prevista Skills Bootcamp Form submitted. Please find attached files."
 
-        'ph119': st.session_state.ethnicity_vars['ethnicity_31'],
-        'ph120': st.session_state.ethnicity_vars['ethnicity_32'],
-        'ph121': st.session_state.ethnicity_vars['ethnicity_33'],
-        'ph122': st.session_state.ethnicity_vars['ethnicity_34'],
-        'ph123': st.session_state.ethnicity_vars['ethnicity_35'],
-        'ph124': st.session_state.ethnicity_vars['ethnicity_36'],
-        'ph125': st.session_state.ethnicity_vars['ethnicity_37'],
-        'ph126': st.session_state.ethnicity_vars['ethnicity_38'],
-        'ph127': st.session_state.ethnicity_vars['ethnicity_39'],
-        'ph128': st.session_state.ethnicity_vars['ethnicity_40'],
-        'ph129': st.session_state.ethnicity_vars['ethnicity_41'],
-        'ph130': st.session_state.ethnicity_vars['ethnicity_42'],
-        'ph131': st.session_state.ethnicity_vars['ethnicity_43'],
-        'ph132': st.session_state.ethnicity_vars['ethnicity_44'],
-        'ph133': st.session_state.ethnicity_vars['ethnicity_45'],
-        'ph134': st.session_state.ethnicity_vars['ethnicity_46'],
-        'ph135': st.session_state.ethnicity_vars['ethnicity_47'],
-        'ph136': st.session_state.ethnicity_vars['ethnicity_48'],
-        'ph59': st.session_state.ph59,
-        'ph60': st.session_state.ph60,
-        'ph61': st.session_state.ph61,
-        'ph62': st.session_state.ph62,
-        # 'ph10': st.session_state.highest_education,
-        # 'ph11': st.session_state.institution_name,
-        # 'ph12': st.session_state.year_of_completion,
-        # 'ph13': st.session_state.completed_level_6_or_above,
-        # 'ph14': st.session_state.subject,
-        # 'ph15': st.session_state.date_applied,
-        # 'ph16': st.session_state.placeholder_16,
-        # 'ph17': st.session_state.placeholder_17,
-        # 'ph18': st.session_state.placeholder_18,
-        # 'ph19': st.session_state.placeholder_19,
-        'ph40': st.session_state.emergency_contact_name,
-        'ph41': st.session_state.emergency_contact_relationship,
-        'ph42': st.session_state.emergency_contact_phone,
-        'ph43': st.session_state.home_tel_no,
+        subject_learner = "Thank You for Your Interest in The Skills Bootcamp!"
+        body_learner = f"""
+        <html>
+        <body>
+            <p>Dear {st.session_state.first_name} {st.session_state.sir_name},</p>
 
-        'ph63': st.session_state.ph63,
-        'ph64': st.session_state.ph64,
-        'ph65': st.session_state.ph65,
-        'ph66': st.session_state.ph66,
-        'ph67': st.session_state.ph67,
-        'ph68': st.session_state.ph68,
-        'ph69': st.session_state.ph69,
-        'ph70': st.session_state.ph70,
-        'ph71': st.session_state.ph71,
-        'ph72': st.session_state.ph72,
-        'ph73': st.session_state.ph73,
-        'ph74': st.session_state.ph74,        
+            <p>Thank you for expressing your interest in Bootcamp at PREVISTA. We are excited to guide you through the next steps of the enrollment process.</p>
 
-        'ph75': st.session_state.ph75,
-        'ph76': st.session_state.ph76,
-        'ph77': st.session_state.ph77,
-        'ph78': st.session_state.ph78,
-        'ph79a': st.session_state.ph79a,
-        'ph79b': st.session_state.ph79b,
-        'ph79c': st.session_state.ph79c,
-        'ph79d': st.session_state.ph79d,
-        'ph80': st.session_state.ph80,
-        'ph81': st.session_state.ph81,
-        'ph82': st.session_state.ph82,
+            <p><strong>What’s Next?</strong></p>
+            <ol>
+                <li><strong>Enrollment Communication:</strong> One of our representatives will be contacting you within the next few days to complete your enrollment. Please keep an eye out for our message to finalize your registration details.</li>
+                <li><strong>Course Start Date:</strong> Once your enrollment is confirmed, we will send you the schedule for the course start date.</li>
+                <li><strong>Orientation Session:</strong> You will be invited to an orientation session where you can learn more about the platform, meet your instructors, and connect with other learners.</li>
+            </ol>
 
-        'ph83': st.session_state.ph83,  # Less than 6 months
-        'ph84': st.session_state.ph84,  # 6-11 months
-        'ph85': st.session_state.ph85,  # 12-23 months
-        'ph86': st.session_state.ph86,  # 24-35 months
-        'ph87': st.session_state.ph87,   # 36 months or over
+            <p>If you have any immediate questions, please feel free to reach out to us at [support email] or [support phone number].</p>
 
-        'ph88': st.session_state.ph88,  # In receipt of JSA
-        'ph89': st.session_state.ph89,  # In receipt of ESA (Part of WRAG group)
-        'ph90': st.session_state.ph90,  # In receipt of Universal Credit
-        'ph91': st.session_state.ph91,  # In receipt of another State Benefit
-        'ph92': st.session_state.ph92,   # None
+            <p>We look forward to speaking with you soon and welcoming you to our learning community!</p>
 
-        'ph93': st.session_state.ph93,  # Name of Employer
-        'ph94': st.session_state.ph94,  # Postcode
-        'ph95': st.session_state.ph95,  # Current Job Role
-        'ph96': st.session_state.ph96,  # Current Hourly Rate
-        'ph97y': st.session_state.ph97y,   # Attending Bootcamp via Employer (Yes/No)
-        'ph97n': st.session_state.ph97n,   # Attending Bootcamp via Employer (Yes/No)
+            <p>Best regards,</p>
+            <p>Student Admissions Team<br>
+            PREVISTA<br>
+            PREPARING YOU TODAY FOR OPPORTUNITIES OF TOMORROW</p>
+        </body>
+        </html>
+        """
 
-        'ph98': st.session_state.ph98,  # Yes (Full-time employment)
-        'ph99': st.session_state.ph99,  # Yes (Part-time employed)
-        'ph100': st.session_state.ph100,  # Yes (Self-employed)
-        'ph101': st.session_state.ph101,  # No
+        # Local file path
+        local_file_path = modified_file
 
-        'ph102': st.session_state.ph102,  # Major Group
-        'ph103': st.session_state.ph103,  # Managers, directors and senior officials
-        'ph104': st.session_state.ph104,  # Professional occupations
-        'ph105': st.session_state.ph105,  # Associate professional and technical occupations
-        'ph106': st.session_state.ph106,  # Administrative and secretarial occupations
-        'ph107': st.session_state.ph107,  # Skilled trades occupations
-        'ph108': st.session_state.ph108,  # Caring, leisure and other service occupations
-        'ph109': st.session_state.ph109,  # Sales and customer service occupations
-        'ph110': st.session_state.ph110,  # Process, plant and machine operatives
-        'ph111': st.session_state.ph111,   # Elementary occupations
+        # Send email to team with attachments
+        if st.session_state.files or local_file_path:
+            send_email_with_attachments(sender_email, sender_password, team_email, subject_team, body_team, st.session_state.files, local_file_path)
+        
+        # Send thank you email to learner
+        send_email_with_attachments(sender_email, sender_password, learner_email, subject_learner, body_learner)
 
-        'ph112': st.session_state.ph112,  # Agriculture / forestry / fishing
-        'ph113': st.session_state.ph113,  # Distribution / hotels / restaurants
-        'ph114': st.session_state.ph114,  # Public admin / education / health
-        'ph115': st.session_state.ph115,  # Banking / finance
-        'ph116': st.session_state.ph116,  # Energy / water
-        'ph117': st.session_state.ph117,  # Transport / communication
-        'ph118': st.session_state.ph118,  # Construction
-        'ph119': st.session_state.ph119,  # Manufacturing
-        'ph120': st.session_state.ph120,   # Other services (Please specify below)
-        'ph120a': st.session_state.ph120a,   # Other services (Specifiy)
-
-        'ph121': st.session_state.ph121,  # No
-        'ph122': st.session_state.ph122,  # Yes
-        'ph123': st.session_state.ph123,  # Other
-        'ph124': st.session_state.ph124,  # Epilepsy
-        'ph125': st.session_state.ph125,  # Hearing Impairment
-        'ph126': st.session_state.ph126,  # Diagnosed mental health condition
-        'ph127': st.session_state.ph127,  # Moderate Learning Difficulty
-        'ph128': st.session_state.ph128,  # Physical Disability
-        'ph129': st.session_state.ph129,  # Other Specific Learning Difficulty (e.g. Dyspraxia)
-        'ph130': st.session_state.ph130,  # Profound/Complex Disabilities
-        'ph131': st.session_state.ph131,  # Severe Learning Difficulty
-        'ph132': st.session_state.ph132,  # Social, Emotional & Behavioural Difficulties
-        'ph133': st.session_state.ph133,  # Speech, Language and Communication needs
-        'ph134': st.session_state.ph134,  # Temporary Disability after Illness or accident
-        'ph135': st.session_state.ph135,  # Visual Impairment-excluding glasses/contact lenses
-        'ph136': st.session_state.ph136,  # Prefer not to say
-        'ph137': st.session_state.ph137,  # Are you a wheelchair user? + Other specify text
-        'ph138': st.session_state.ph138,  # Allergy
-        'ph139': st.session_state.ph139,  # Asperger’s Syndrome
-        'ph140': st.session_state.ph140,  # Asthma
-        'ph141': st.session_state.ph141,  # Autism Spectrum Condition
-        'ph142': st.session_state.ph142,  # Cystic Fibrosis
-        'ph143': st.session_state.ph143,  # Diabetes
-        'ph144': st.session_state.ph144,  # Disability Affecting Mobility
-        'ph145': st.session_state.ph145,  # Dyscalculia
-        'ph146': st.session_state.ph146,  # Dyslexia
-        'impactful_condition': st.session_state.impactful_condition,  # Most impactful condition
-        'confidential_interview': st.session_state.confidential_interview,  # Confidential interview checkbox
-
-        'ph147': st.session_state.ph147,  # Employer
-        'ph148': st.session_state.ph148,  # Job Centre
-        'ph149': st.session_state.ph149,  # Social Media
-        'ph150': st.session_state.ph150,  # Local Press
-        'ph151': st.session_state.ph151,  # Search Engine
-        'ph152': st.session_state.ph152,  # Friends / Family
-        'ph153': st.session_state.ph153,  # Other Source
-        'other_source': st.session_state.other_source,  # Other Source (specified)
-
-        'ph154': st.session_state.ph154,  # About courses or learning opportunities
-        'ph155': st.session_state.ph155,  # For surveys and research
-        'ph156': st.session_state.ph156,  # By post
-        'ph157': st.session_state.ph157,  # By phone
-        'ph158': st.session_state.ph158,  # By email
-        'ph159': st.session_state.ph159,   # Consent to being filmed
-
-        'ph35m': st.session_state.ph35m,
-        'ph35f': st.session_state.ph35f,
-        'ph50': date.today().strftime("%d-%m-%Y"),
-    }
-
-    template_file = "ph_skills_bootcamp.docx"
-    modified_file = f"SkillsBootcamp_Form_Submission_{st.session_state.first_name}_{st.session_state.sir_name}.docx"
-
-    signature_path = 'signature_image.png'
-    signature_image = PILImage.fromarray(
-        st.session_state.signature.astype('uint8'), 'RGBA')
-    signature_image.save(signature_path)
-
-    replace_placeholders(template_file, modified_file, placeholder_values, signature_path)
-
-
-
-# Email
-    # Sender email credentials
-    # Credentials: Streamlit host st.secrets
-    sender_email = st.secrets["sender_email"]
-    sender_password = st.secrets["sender_password"]
-
-    # Credentials: Local env
-    # load_dotenv()                                     # uncomment import of this library!
-    # sender_email = os.getenv('EMAIL')
-    # sender_password = os.getenv('PASSWORD')
-    team_email = [sender_email]
-    # team_email = ['muhammadoa@prevista.co.uk']
-    # receiver_email = sender_email
-    # receiver_email = 'muhammadoa@prevista.co.uk'
-
-    learner_email = [st.session_state.email]
-    
-    subject_team = f"Skills_Bootcamp Name: {st.session_state.selected_option} {st.session_state.first_name}_{st.session_state.sir_name} Submission Date: {date.today()}"
-    body_team = "Prevista Skills Bootcamp Form submitted. Please find attached files."
-
-    subject_learner = "Thank You for Your Interest in The Skills Bootcamp!"
-    body_learner = f"""
-    <html>
-    <body>
-        <p>Dear {st.session_state.first_name} {st.session_state.sir_name},</p>
-
-        <p>Thank you for expressing your interest in Bootcamp at PREVISTA. We are excited to guide you through the next steps of the enrollment process.</p>
-
-        <p><strong>What’s Next?</strong></p>
-        <ol>
-            <li><strong>Enrollment Communication:</strong> One of our representatives will be contacting you within the next few days to complete your enrollment. Please keep an eye out for our message to finalize your registration details.</li>
-            <li><strong>Course Start Date:</strong> Once your enrollment is confirmed, we will send you the schedule for the course start date.</li>
-            <li><strong>Orientation Session:</strong> You will be invited to an orientation session where you can learn more about the platform, meet your instructors, and connect with other learners.</li>
-        </ol>
-
-        <p>If you have any immediate questions, please feel free to reach out to us at [support email] or [support phone number].</p>
-
-        <p>We look forward to speaking with you soon and welcoming you to our learning community!</p>
-
-        <p>Best regards,</p>
-        <p>Student Admissions Team<br>
-        PREVISTA<br>
-        PREPARING YOU TODAY FOR OPPORTUNITIES OF TOMORROW</p>
-    </body>
-    </html>
-    """
-
-    # Local file path
-    local_file_path = modified_file
-
-    # Send email to team with attachments
-    if st.session_state.files or local_file_path:
-        send_email_with_attachments(sender_email, sender_password, team_email, subject_team, body_team, st.session_state.files, local_file_path)
-    
-    # Send thank you email to learner
-    send_email_with_attachments(sender_email, sender_password, learner_email, subject_learner, body_learner)
-
-    st.success("Processing Complete!")
-    st.write("Someone will get in touch with you soon.")
-    last()
+        st.success("Processing Complete!")
+        st.write("Someone will get in touch with you soon.")
+        last()
 
 
 
