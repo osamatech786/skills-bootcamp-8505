@@ -948,7 +948,7 @@ elif st.session_state.step == 9:
         if is_signature_drawn(st.session_state.signature) and st.session_state.date:
             time.sleep(1)
             st.write("**Thank you for completing the enrollment form!**")
-            st.write("Please wait while we are still processing. . . . .")
+            st.warning("Please wait for SNOWFLAKES!", icon="🚨")
             time.sleep(1)
 
             st.session_state.submission_done = True
@@ -1215,6 +1215,7 @@ with st.spinner('Wait for it...'):
 
         st.success("Processing Complete!")
         st.write("Someone will get in touch with you soon.")
+        st.snow()
         last()
 
 
