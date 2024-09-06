@@ -907,7 +907,8 @@ elif st.session_state.step == 9:
 
     Your information may also be shared with other third parties for the above purposes, but only where the law allows it and the sharing is in compliance with data protection legislation. You can agree to be contacted for other purposes by ticking any of the following boxes:
     """
-    st.text(privacy_notice)
+    with st.container(height=600, border=True):
+        st.write(privacy_notice)
 
     # Checkboxes for contact preferences
     st.session_state.ph154 = 'X' if st.checkbox("About courses or learning opportunities") else ''
