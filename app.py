@@ -14,7 +14,7 @@ import time
 
 # Set page configuration with a favicon
 st.set_page_config(
-    page_title="Prevista Skills Bootcamp",
+    page_title="Surrey H&S Bootcamp",
     page_icon="https://lirp.cdn-website.com/d8120025/dms3rep/multi/opt/social-image-88w.png", 
     layout="centered"  # "centered" or "wide"
 )
@@ -304,12 +304,23 @@ elif st.session_state.step == 2:
         st.session_state.ph35m = ''
         st.session_state.ph35f = 'x'
         
-    st.session_state.home_number = st.text_input("Home Number")
+    st.session_state.home_number = st.text_input("Home Tel No")
     st.session_state.mobile_number = st.text_input("Mobile Number")
     st.session_state.email = st.text_input("Email Address")
 
+
     if st.button("Next"):
-        if (st.session_state.title):
+        if (st.session_state.title and
+            st.session_state.sir_name and
+            st.session_state.first_name and
+            st.session_state.preferred_name and
+            st.session_state.home_address and
+            st.session_state.postcode and
+            st.session_state.ni_number and
+            st.session_state.home_number and
+            st.session_state.mobile_number and
+            st.session_state.email
+            ):
 
             st.session_state.step = 3
             st.experimental_rerun()
@@ -399,9 +410,18 @@ elif st.session_state.step == 4:
     st.session_state.emergency_contact_phone = st.text_input("Emergency Contact Mobile Number")
     st.session_state.home_tel_no = st.text_input("Emergency Contact Home Tel No")
 
+
     if st.button("Next"):
-        st.session_state.step = 5
-        st.experimental_rerun()
+            if (st.session_state.emergency_contact_name and
+                st.session_state.emergency_contact_relationship and
+                st.session_state.emergency_contact_phone and
+                st.session_state.home_tel_no
+            ):
+                st.session_state.step = 5
+                st.experimental_rerun()
+            else:
+                st.warning("Please fill in all fields before proceeding.")    
+            
 
 elif st.session_state.step == 5:
     st.title("> 4: Prior Attainment/Highest Previous Qualifications")
@@ -690,11 +710,17 @@ elif st.session_state.step == 6:
 
 
     if st.button("Next"):
-        if 1==1:
+        if selected_employment in paid_employment_options:
+            if (st.session_state.ph93 and
+                st.session_state.ph94 and
+                st.session_state.ph95):
+                st.session_state.step = 7
+                st.experimental_rerun()
+            else:
+                st.warning("Please fill in all fields before proceeding.")
+        else:
             st.session_state.step = 7
             st.experimental_rerun()
-        else:
-            st.warning("Please provide a statement of interest before proceeding.")
 
 elif st.session_state.step == 7:
     st.title("> 6: Disability, Learning Difficulty and or Health Problem")
@@ -820,8 +846,22 @@ elif st.session_state.step == 7:
 
 
     if st.button("Next"):
-        st.session_state.step = 8
-        st.experimental_rerun()
+        if selected_difficulty == "Other":
+            if (st.session_state.ph137):
+                st.session_state.step = 8
+                st.experimental_rerun()
+            else:
+                st.warning("Please fill in all fields before proceeding.")
+        elif selected_difficulty == "Yes":
+            if(any(st.session_state.get(f'ph{i}') == 'X' for i in range(124, 147))):
+                st.session_state.step = 8
+                st.experimental_rerun()
+            else:
+                st.warning("Please fill in all fields before proceeding.")
+        else:
+            st.session_state.step = 8
+            st.experimental_rerun()
+
 
 elif st.session_state.step == 8:
     st.title("> 7: Contact and Marketing Information")
@@ -876,8 +916,15 @@ elif st.session_state.step == 8:
     # })
 
     if st.button("Next"):
-        st.session_state.step = 9
-        st.experimental_rerun()
+        if selected_option == "Other Source":
+            if (st.session_state.other_source):
+                st.session_state.step = 9
+                st.experimental_rerun()
+            else:
+                st.warning("Please fill in all fields before proceeding.")
+        else:
+            st.session_state.step = 9
+            st.experimental_rerun()
 
 elif st.session_state.step == 9:
     st.title("> 8: Learner Declaration and Commitment")
