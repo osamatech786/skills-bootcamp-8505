@@ -249,12 +249,54 @@ if st.session_state.step == 1:
 
     # Add question with a dropdown menu
     support_options = [
-    "    ", "Catalyst", "Innovators"
+    "    ", 
+    "Innovator Recruitment Team",
+    "Catalyst Recruitment Team",
+    "Guildford JCP",
+    "Camberley JCP",
+    "Epsom JCP",
+    "Woking JCP",
+    "Redhill JCP",
+    "Staines JCP",
+    "Leatherhead JCP",
+    "Croydon JCP",
+    "Surrey County Council",
+    "Surrey Employment and Skills Board (SESB)",
+    "Federation of Small Businesses (FSB) Surrey",
+    "Surrey Chambers of Commerce",
+    "Voluntary Action South West Surrey",
+    "Guildford Borough Council",
+    "Woking Borough Council",
+    "Surrey Choices",
+    "Elmbridge Community Job Club",
+    "Mole Valley Employment Group",
+    "Surrey Lifelong Learning Partnership (SLLP)",
 ]
     st.session_state.selected_option = st.selectbox(
     "Who is supporting you to fill this form?", 
     support_options
 )
+ 
+    
+    hear_about_options = [
+    "Self-referral", 
+    "Jobcentre Plus (JCP)",
+    "Local Council",
+    "Online",
+    "Word of Mouth",
+    "Community Organization",
+    "Employer or Training Provider",
+    "Promotional Materials",
+    "Other (please specify)"
+]
+    st.session_state.hear_about = st.selectbox(
+    "Hear about this opportunity:", 
+    hear_about_options
+)
+    # If the user selects "Other (please specify)", display an input field
+    if st.session_state.hear_about == "Other (please specify)":
+        st.session_state.other_source = st.text_input("Please specify:")
+
 
     st.write("""
     Please complete the upcoming sections to finalize your enrollment.
@@ -1239,7 +1281,7 @@ with st.spinner('Wait for it...'):
                 <li><strong>Orientation Session:</strong> You will be invited to an orientation session where you can learn more about the platform, meet your instructors, and connect with other learners.</li>
             </ol>
 
-            <p>If you have any immediate questions, please feel free to reach out to us at [support email] or [support phone number].</p>
+            <p>If you have any immediate questions, please feel free to reach out to us at PrevistaAdmissions@prevista.co.uk or [support phone number].</p>
 
             <p>We look forward to speaking with you soon and welcoming you to our learning community!</p>
 
