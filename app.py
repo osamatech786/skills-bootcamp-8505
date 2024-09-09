@@ -250,6 +250,7 @@ if st.session_state.step == 1:
     # Add question with a dropdown menu
     support_options = [
     "    ", 
+    "Self Completing",
     "Innovator Recruitment Team",
     "Catalyst Recruitment Team",
     "Guildford JCP",
