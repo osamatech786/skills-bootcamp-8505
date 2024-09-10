@@ -43,7 +43,7 @@ def is_valid_email(email):
     
     # Match the entire email against the pattern
     return re.match(pattern, email, re.VERBOSE) is not None
-    
+
 # Function to send email with attachments (Handle Local + Uploaded)
 def send_email_with_attachments(sender_email, sender_password, receiver_email, subject, body, files=None, local_file_path=None):
     msg = EmailMessage()
