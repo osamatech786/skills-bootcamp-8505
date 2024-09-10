@@ -1283,7 +1283,7 @@ with st.spinner('Wait for it...'):
                 <li><strong>Orientation Session:</strong> You will be invited to an orientation session where you can learn more about the platform, meet your instructors, and connect with other learners.</li>
             </ol>
 
-            <p>If you have any immediate questions, please feel free to reach out to us at PrevistaAdmissions@prevista.co.uk or [support phone number].</p>
+            <p>If you have any immediate questions, please feel free to reach out to us at PrevistaAdmissions@prevista.co.uk.</p>
 
             <p>We look forward to speaking with you soon and welcoming you to our learning community!</p>
 
