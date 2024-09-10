@@ -28,6 +28,22 @@ if 'step' not in st.session_state:
 def last():
     st.session_state.clear()
 
+def is_valid_email(email):
+    # Comprehensive regex for email validation
+    pattern = r'''
+        ^                         # Start of string
+        (?!.*[._%+-]{2})          # No consecutive special characters
+        [a-zA-Z0-9._%+-]{1,64}    # Local part: allowed characters and length limit
+        (?<![._%+-])              # No special characters at the end of local part
+        @                         # "@" symbol
+        [a-zA-Z0-9.-]+            # Domain part: allowed characters
+        (?<![.-])                 # No special characters at the end of domain
+        \.[a-zA-Z]{2,}$           # Top-level domain with minimum 2 characters
+    '''
+    
+    # Match the entire email against the pattern
+    return re.match(pattern, email, re.VERBOSE) is not None
+    
 # Function to send email with attachments (Handle Local + Uploaded)
 def send_email_with_attachments(sender_email, sender_password, receiver_email, subject, body, files=None, local_file_path=None):
     msg = EmailMessage()
@@ -354,22 +370,24 @@ elif st.session_state.step == 2:
 
 
     if st.button("Next"):
-        if (st.session_state.title and
-            st.session_state.sir_name and
-            st.session_state.first_name and
-            st.session_state.preferred_name and
-            st.session_state.home_address and
-            st.session_state.postcode and
-            st.session_state.ni_number and
-            st.session_state.home_number and
-            st.session_state.mobile_number and
-            st.session_state.email
-            ):
+        if (is_valid_email(st.session_state.email)):
+            if (st.session_state.title and
+                st.session_state.sir_name and
+                st.session_state.first_name and
+                st.session_state.preferred_name and
+                st.session_state.home_address and
+                st.session_state.postcode and
+                st.session_state.ni_number and
+                st.session_state.home_number and
+                st.session_state.mobile_number
+                ):
 
-            st.session_state.step = 3
-            st.experimental_rerun()
+                st.session_state.step = 3
+                st.experimental_rerun()
+            else:
+                st.warning("Please fill in all fields before proceeding.")    
         else:
-            st.warning("Please fill in all fields before proceeding.")    
+            st.warning("Please enter valid email address.")
 
 elif st.session_state.step == 3:
     st.title("> 2: Please indicate your ethnic group")
