@@ -2,7 +2,7 @@ import streamlit as st
 from datetime import datetime, date
 from PIL import Image as PILImage
 import numpy as np
-import io
+# import io
 from docx import Document
 from docx.shared import Inches
 from streamlit_drawable_canvas import st_canvas
@@ -11,6 +11,8 @@ from email.message import EmailMessage
 import shutil
 import re
 import time
+from dotenv import load_dotenv
+import os
 
 # Set page configuration with a favicon
 st.set_page_config(
@@ -19,11 +21,143 @@ st.set_page_config(
     layout="centered"  # "centered" or "wide"
 )
 
+# add render support along with st.secret
+def get_secret(key):
+    try:
+        load_dotenv()
+        # Attempt to get the secret from environment variables
+        secret = os.environ.get(key)
+        if secret is None:
+            raise ValueError("Secret not found in environment variables")
+        return secret
+    except (ValueError, TypeError) as e:
+        # If an error occurs, fall back to Streamlit secrets
+        if hasattr(st, 'secrets'):
+            return st.secrets.get(key)
+        # If still not found, return None or handle as needed
+        return None
+
 # Initialize session state
-if 'step' not in st.session_state:
-    st.session_state.step = 1
-    st.session_state.submission_done=False
-    st.session_state.dob=''
+if 'step' not in st.session_state: st.session_state.step = 1
+if 'submission_done' not in st.session_state: st.session_state.submission_done = False
+if 'selected_option' not in st.session_state: st.session_state.selected_option = "    "  # Default value for the dropdown
+if 'hear_about' not in st.session_state: st.session_state.hear_about = "Self-referral"  # Default value for the dropdown
+if 'hother_source' not in st.session_state: st.session_state.hother_source = ''  # Default for the "Other" text input
+# Initialize session state for Step 2
+if 'title' not in st.session_state: st.session_state.title = "Mr"  # Default title
+if 'sir_name' not in st.session_state: st.session_state.sir_name = ''  # Default surname
+if 'first_name' not in st.session_state: st.session_state.first_name = ''  # Default first name
+if 'preferred_name' not in st.session_state: st.session_state.preferred_name = ''  # Default preferred name
+if 'previous_name' not in st.session_state: st.session_state.previous_name = ''  # Default previous name
+if 'home_address' not in st.session_state: st.session_state.home_address = ''  # Default home address
+if 'postcode' not in st.session_state: st.session_state.postcode = ''  # Default postcode
+if 'previous_postcode_country' not in st.session_state: st.session_state.previous_postcode_country = ''  # Default previous postcode or country
+if 'dob' not in st.session_state: st.session_state.dob = None
+if 'ni_number' not in st.session_state: st.session_state.ni_number = ''  # Default National Insurance number
+if 'gender' not in st.session_state: st.session_state.gender = "Male"  # Default gender
+if 'home_number' not in st.session_state: st.session_state.home_number = ''  # Default home phone number
+if 'mobile_number' not in st.session_state: st.session_state.mobile_number = ''  # Default mobile number
+if 'email' not in st.session_state: st.session_state.email = ''  # Default email
+# Initialize session state for Step 3
+ethnicity_options = {
+    'White': {
+        'English/ Welsh/ Scottish/ N Irish/ British': '31',
+        'Irish': '32',
+        'Roma, Gypsy or Irish Traveller': '33',
+        'Any other white background': '34'
+    },
+    'Mixed/ Multiple ethnic group': {
+        'White and Black Caribbean': '35',
+        'White and Black African': '36',
+        'White and Asian': '37',
+        'Any other mixed/ multiple ethnic background': '38'
+    },
+    'Asian/ Asian British': {
+        'Bangladeshi': '41',
+        'Chinese': '42',
+        'Indian': '39',
+        'Pakistani': '40',
+        'Any other Asian background': '43'
+    },
+    'Black/ African/ Caribbean/ Black British': {
+        'African': '44',
+        'Caribbean': '45',
+        'Any Other Black/ African/ Caribbean background': '46'
+    },
+    'Other Ethnic Group': {
+        'Arab': '47',
+        'Any other ethnic group': '48'
+    }
+}
+if 'ethnicity_category' not in st.session_state: st.session_state.ethnicity_category = list(ethnicity_options.keys())[0]  # Default to first category
+# Initialize ethnicity only if ethnicity_category is already defined
+if 'ethnicity' not in st.session_state: st.session_state.ethnicity = list(ethnicity_options[st.session_state.ethnicity_category].keys())[0]  # Default to first ethnicity in the default category
+if 'ethnicity_code' not in st.session_state: st.session_state.ethnicity_code = 31  # Default to first code
+if 'ethnicity_vars' not in st.session_state: st.session_state.ethnicity_vars = {f'ethnicity_{i}': '' for i in range(31, 49)}  # Initialize all ethnicity variables
+if 'ph59' not in st.session_state: st.session_state.ph59 = ''  # Default for criminal conviction
+if 'ph60' not in st.session_state: st.session_state.ph60 = ''  # Default for criminal conviction
+if 'criminal_conviction' not in st.session_state: st.session_state.criminal_conviction = "No"  # Default for criminal conviction radio
+if 'ph61' not in st.session_state: st.session_state.ph61 = ''  # Default for caring for children
+if 'ph62' not in st.session_state: st.session_state.ph62 = ''  # Default for caring for children
+if 'caring_children' not in st.session_state: st.session_state.caring_children = "No"  # Default for caring for children radio
+# Initialize session state for Step 4
+if 'emergency_contact_name' not in st.session_state: st.session_state.emergency_contact_name = ''  # Default for emergency contact name
+if 'emergency_contact_relationship' not in st.session_state: st.session_state.emergency_contact_relationship = ''  # Default for emergency contact relationship
+if 'emergency_contact_phone' not in st.session_state: st.session_state.emergency_contact_phone = ''  # Default for emergency contact mobile number
+if 'home_tel_no' not in st.session_state: st.session_state.home_tel_no = ''  # Default for emergency contact home telephone number
+# Initialize session state for Step 5
+if 'ph63' not in st.session_state: st.session_state.ph63 = ''  # Entry Level
+if 'ph64' not in st.session_state: st.session_state.ph64 = ''  # Qualifications below Level 1
+if 'ph65' not in st.session_state: st.session_state.ph65 = ''  # Level 1
+if 'ph66' not in st.session_state: st.session_state.ph66 = ''  # Full Level 2
+if 'ph67' not in st.session_state: st.session_state.ph67 = ''  # Full Level 3
+if 'ph68' not in st.session_state: st.session_state.ph68 = ''  # Level 4
+if 'ph69' not in st.session_state: st.session_state.ph69 = ''  # Level 5
+if 'ph70' not in st.session_state: st.session_state.ph70 = ''  # Level 6
+if 'ph71' not in st.session_state: st.session_state.ph71 = ''  # Level 7 or above
+if 'ph72' not in st.session_state: st.session_state.ph72 = ''  # Other qualification
+if 'ph73' not in st.session_state: st.session_state.ph73 = ''  # No qualifications
+if 'ph74' not in st.session_state: st.session_state.ph74 = ''  # Not known
+# Initialize session state for Step 6
+for i in range(75, 84):
+    if f'ph{i}' not in st.session_state: st.session_state[f'ph{i}'] = ''  # Initialize placeholders for employment status options
+# Additional placeholders for employment details
+if 'ph79a' not in st.session_state: st.session_state.ph79a = ''  # 0 – 10 Hours (Self-employed)
+if 'ph79b' not in st.session_state: st.session_state.ph79b = ''  # 11 – 20 Hours (Self-employed)
+if 'ph79c' not in st.session_state: st.session_state.ph79c = ''  # 21 – 30 Hours (Self-employed)
+if 'ph79d' not in st.session_state: st.session_state.ph79d = ''  # 31+ Hours (Self-employed)
+# Initialize placeholders for other options
+for i in range(83, 88):
+    if f'ph{i}' not in st.session_state: st.session_state[f'ph{i}'] = ''  # Unemployment duration options
+for i in range(88, 93):
+    if f'ph{i}' not in st.session_state: st.session_state[f'ph{i}'] = ''  # Benefit options
+for i in range(93, 96):
+    if f'ph{i}' not in st.session_state: st.session_state[f'ph{i}'] = ''  # Employer details
+if 'ph96' not in st.session_state: st.session_state.ph96 = 0.0
+if 'ph97y' not in st.session_state: st.session_state.ph97y = ''  # Attending Bootcamp via Employer (Yes/No)
+if 'ph97n' not in st.session_state: st.session_state.ph97n = ''  # Attending Bootcamp via Employer (Yes/No)
+for i in range(98, 102):
+    if f'ph{i}' not in st.session_state: st.session_state[f'ph{i}'] = ''  # Work alongside bootcamp options
+for i in range(102, 112):
+    if f'ph{i}' not in st.session_state: st.session_state[f'ph{i}'] = ''  # Most recent occupation options
+for i in range(112, 121):
+    if f'ph{i}' not in st.session_state: st.session_state[f'ph{i}'] = ''  # Industry/sector options
+if 'ph120a' not in st.session_state: st.session_state.ph120a = ''  # Other services (Specify)
+# Initialize session state for Step 7
+for i in range(121, 147):
+    if f'ph{i}' not in st.session_state: st.session_state[f'ph{i}'] = ''  # Initialize placeholders for disabilities, learning difficulties, and health problems
+if 'ph123a' not in st.session_state: st.session_state.ph123a = ''  # Other Specify
+if 'impactful_condition' not in st.session_state: st.session_state.impactful_condition = ''  # Default for most impactful condition
+if 'confidential_interview' not in st.session_state: st.session_state.confidential_interview = ''  # Default for confidential interview request
+# Initialize session state for Step 8
+for i in range(147, 154):
+    if f'ph{i}' not in st.session_state: st.session_state[f'ph{i}'] = ''  # Initialize placeholders for contact and marketing information
+if 'other_source' not in st.session_state: st.session_state.other_source = ''  # Default for other source specification
+# Initialize session state for Step 9
+for i in range(154, 160):
+    if f'ph{i}' not in st.session_state: st.session_state[f'ph{i}'] = ''  # Initialize placeholders for learner declaration and commitment
+
+
 
 def last():
     st.session_state.clear()
@@ -265,97 +399,113 @@ if st.session_state.step == 1:
 
     # Add question with a dropdown menu
     support_options = [
-    "    ", 
-    "Self Completing",
-    "Innovator Recruitment Team",
-    "Catalyst Recruitment Team",
-    "Guildford JCP",
-    "Camberley JCP",
-    "Epsom JCP",
-    "Woking JCP",
-    "Redhill JCP",
-    "Staines JCP",
-    "Leatherhead JCP",
-    "Croydon JCP",
-    "Surrey County Council",
-    "Surrey Employment and Skills Board (SESB)",
-    "Federation of Small Businesses (FSB) Surrey",
-    "Surrey Chambers of Commerce",
-    "Voluntary Action South West Surrey",
-    "Guildford Borough Council",
-    "Woking Borough Council",
-    "Surrey Choices",
-    "Elmbridge Community Job Club",
-    "Mole Valley Employment Group",
-    "Surrey Lifelong Learning Partnership (SLLP)",
-]
-    st.session_state.selected_option = st.selectbox(
-    "Who is supporting you to fill this form?", 
-    support_options
-)
- 
-    
-    hear_about_options = [
-    "Self-referral", 
-    "Jobcentre Plus (JCP)",
-    "Local Council",
-    "Online",
-    "Word of Mouth",
-    "Community Organization",
-    "Employer or Training Provider",
-    "Promotional Materials",
-    "Other (please specify)"
-]
-    st.session_state.hear_about = st.selectbox(
-    "Hear about this opportunity:", 
-    hear_about_options
-)
-    # If the user selects "Other (please specify)", display an input field
-    st.session_state.hother_source=''
-    if st.session_state.hear_about == "Other (please specify)":
-        st.session_state.hother_source = st.text_input("Please specify:")
+        "    ", 
+        "Self Completing",
+        "Innovator Recruitment Team",
+        "Catalyst Recruitment Team",
+        "Guildford JCP",
+        "Camberley JCP",
+        "Epsom JCP",
+        "Woking JCP",
+        "Redhill JCP",
+        "Staines JCP",
+        "Leatherhead JCP",
+        "Croydon JCP",
+        "Surrey County Council",
+        "Surrey Employment and Skills Board (SESB)",
+        "Federation of Small Businesses (FSB) Surrey",
+        "Surrey Chambers of Commerce",
+        "Voluntary Action South West Surrey",
+        "Guildford Borough Council",
+        "Woking Borough Council",
+        "Surrey Choices",
+        "Elmbridge Community Job Club",
+        "Mole Valley Employment Group",
+        "Surrey Lifelong Learning Partnership (SLLP)",
+    ]
 
+    st.session_state.selected_option = st.selectbox(
+        "Who is supporting you to fill this form?", 
+        support_options,
+        index=support_options.index(st.session_state.selected_option)  # Set default value
+    )
+
+    hear_about_options = [
+        "Self-referral", 
+        "Jobcentre Plus (JCP)",
+        "Local Council",
+        "Online",
+        "Word of Mouth",
+        "Community Organization",
+        "Employer or Training Provider",
+        "Promotional Materials",
+        "Other (please specify)"
+    ]
+
+    st.session_state.hear_about = st.selectbox(
+        "Hear about this opportunity:", 
+        hear_about_options,
+        index=hear_about_options.index(st.session_state.hear_about)  # Set default value
+    )
+
+    # If the user selects "Other (please specify)", display an input field
+    if st.session_state.hear_about == "Other (please specify)":
+        st.session_state.hother_source = st.text_input("Please specify:", value=st.session_state.hother_source)  # Set default value
+    else:
+        st.session_state.hother_source = ''  # Reset if not selected
 
     st.write("""
     Please complete the upcoming sections to finalize your enrollment.
     """)
 
     if st.button("Next"):
-        if (st.session_state.selected_option!='    '):
+        if st.session_state.selected_option != '    ':
             st.session_state.step = 2
             st.experimental_rerun()
         else:
             st.warning("Please Choose Valid Support Option.")
 
+
 elif st.session_state.step == 2:
     st.title("> 1: Learner Information")
+    
     st.session_state.title = st.radio(
-    "Title",
-    ["Mr", "Mrs", "Miss", "Ms"],)
-    st.session_state.sir_name = st.text_input("Surname/Family Name")
-    st.session_state.first_name = st.text_input("First Name(s) in full")
-    st.session_state.preferred_name = st.text_input("Preferred Name")
-    st.session_state.previous_name = st.text_input("Previous Name (if applicable)")
-    st.session_state.home_address = st.text_input("Home Address")
-    st.session_state.postcode = st.text_input("Home Postcode")
-    st.session_state.previous_postcode_country = st.text_input("If you have changed address within the last 3 years, please provide previous UK Postcode / Country (if not living in the UK)")
+        "Title",
+        ["Mr", "Mrs", "Miss", "Ms"],
+        index=["Mr", "Mrs", "Miss", "Ms"].index(st.session_state.title)  # Set default value
+    )
     
-    st.session_state.dob = st.date_input("Date of Birth", 
-                                        min_value=date(1900, 1, 1),  # Minimum selectable date
-                                        max_value=date.today(),  # Maximum selectable date
-                                        key="date_of_borth",  # Unique key for the widget
-                                        help="Choose a date",  # Tooltip text
-                                        value=st.session_state.dob or datetime(2000, 1, 1), 
-                                        format='DD/MM/YYYY')
+    st.session_state.sir_name = st.text_input("Surname/Family Name", value=st.session_state.sir_name)
+    st.session_state.first_name = st.text_input("First Name(s) in full", value=st.session_state.first_name)
+    st.session_state.preferred_name = st.text_input("Preferred Name", value=st.session_state.preferred_name)
+    st.session_state.previous_name = st.text_input("Previous Name (if applicable)", value=st.session_state.previous_name)
+    st.session_state.home_address = st.text_input("Home Address", value=st.session_state.home_address)
+    st.session_state.postcode = st.text_input("Home Postcode", value=st.session_state.postcode)
+    st.session_state.previous_postcode_country = st.text_input("If you have changed address within the last 3 years, please provide previous UK Postcode / Country (if not living in the UK)", value=st.session_state.previous_postcode_country)
     
-    st.session_state.current_age = calculate_age(st.session_state.dob)
-    st.session_state.current_age_text='Current Age: '+ str(st.session_state.current_age)
-    st.text(st.session_state.current_age_text)
+    # Check if dob is a string and convert it back to a date object
+    if isinstance(st.session_state.get("dob"), str):
+        st.session_state.dob = datetime.strptime(st.session_state.get("dob"), "%d-%m-%Y").date()
 
-    st.session_state.ni_number = st.text_input("National Insurance Number")
+    # Date of Birth
+    st.session_state.dob = st.date_input(
+        label="Date of Birth",  # Label for the field
+        value=st.session_state.get("dob"),  # Correctly access dob from session state
+        min_value=date(1900, 1, 1),  # Minimum selectable date
+        max_value=date.today(),  # Maximum selectable date
+        help="Choose a date",  # Tooltip text
+        format='DD/MM/YYYY'
+    )
 
-    st.session_state.ph35m, st.session_state.ph35f = '',''
-    st.session_state.gender = st.radio("Legal Sex as stated on passport/birth certificate:", ["Male", "Female"])
+    st.session_state.ni_number = st.text_input("National Insurance Number", value=st.session_state.ni_number)
+
+    st.session_state.ph35m, st.session_state.ph35f = '', ''
+    st.session_state.gender = st.radio(
+        "Legal Sex as stated on passport/birth certificate:", 
+        ["Male", "Female"],
+        index=["Male", "Female"].index(st.session_state.gender)  # Set default value
+    )
+
     # Update the session state based on the gender selection
     if st.session_state.gender == "Male":
         st.session_state.ph35m = 'x'
@@ -364,83 +514,101 @@ elif st.session_state.step == 2:
         st.session_state.ph35m = ''
         st.session_state.ph35f = 'x'
         
-    st.session_state.home_number = st.text_input("Home Tel No")
-    st.session_state.mobile_number = st.text_input("Mobile Number")
-    st.session_state.email = st.text_input("Email Address")
+    st.session_state.home_number = st.text_input("Home Tel No", value=st.session_state.home_number)
+    st.session_state.mobile_number = st.text_input("Mobile Number", value=st.session_state.mobile_number)
+    st.session_state.email = st.text_input("Email Address", value=st.session_state.email)
 
+    # Next and Back buttons for navigation
+    next_clicked = st.button("Next")
+    back_clicked = st.button("Back")
 
-    if st.button("Next"):
-        if (is_valid_email(st.session_state.email)):
+    # Handle Next button click
+    if next_clicked:
+        if is_valid_email(st.session_state.email):
             if (st.session_state.title and
                 st.session_state.sir_name and
                 st.session_state.first_name and
                 st.session_state.preferred_name and
                 st.session_state.home_address and
                 st.session_state.postcode and
+                st.session_state.dob and
                 st.session_state.ni_number and
                 st.session_state.home_number and
-                st.session_state.mobile_number
-                ):
+                st.session_state.mobile_number):
 
+                # Convert the selected date to the desired string format (DD-MM-YYYY) only when proceeding to the next step
+                st.session_state.dob = st.session_state.dob.strftime("%d-%m-%Y")
+
+                # Check if dob is a string and convert it back to a date object
+                if isinstance(st.session_state.get("dob"), str):
+                    st.session_state.dob = datetime.strptime(st.session_state.get("dob"), "%d-%m-%Y").date()
+                st.session_state.current_age = calculate_age(st.session_state.dob)
+                st.session_state.current_age_text = 'Current Age: ' + str(st.session_state.current_age)
+                st.text(st.session_state.current_age_text)
+                
                 st.session_state.step = 3
                 st.experimental_rerun()
             else:
                 st.warning("Please fill in all fields before proceeding.")    
         else:
-            st.warning("Please enter valid email address.")
+            st.warning("Please enter a valid email address.")
+
+    # Handle Back button click
+    if back_clicked:
+        st.session_state.step = 1  # Go back to the previous step (Section 1)
+        st.experimental_rerun()
+
 
 elif st.session_state.step == 3:
     st.title("> 2: Please indicate your ethnic group")
 
-    ethnicity_options = {
-        'White': {
-            'English/ Welsh/ Scottish/ N Irish/ British': '31',
-            'Irish': '32',
-            'Roma, Gypsy or Irish Traveller': '33',
-            'Any other white background': '34'
-        },
-        'Mixed/ Multiple ethnic group': {
-            'White and Black Caribbean': '35',
-            'White and Black African': '36',
-            'White and Asian': '37',
-            'Any other mixed/ multiple ethnic background': '38'
-        },
-        'Asian/ Asian British': {
-            'Bangladeshi': '41',
-            'Chinese': '42',
-            'Indian': '39',
-            'Pakistani': '40',
-            'Any other Asian background': '43'
-        },
-        'Black/ African/ Caribbean/ Black British': {
-            'African': '44',
-            'Caribbean': '45',
-            'Any Other Black/ African/ Caribbean background': '46'
-        },
-        'Other Ethnic Group': {
-            'Arab': '47',
-            'Any other ethnic group': '48'
-        }
-    }
+    # Initialize ethnicity_vars if it doesn't exist
+    if 'ethnicity_vars' not in st.session_state:
+        st.session_state.ethnicity_vars = {f'ethnicity_{i}': '' for i in range(31, 49)}
 
-    # Select ethnicity category and ethnicity
-    st.session_state.ethnicity_category = st.selectbox('Select Ethnicity Category', list(ethnicity_options.keys()))
-    st.session_state.ethnicity = st.selectbox('Select Ethnicity', list(ethnicity_options[st.session_state.ethnicity_category].keys()))
+    # Select ethnicity category
+    st.session_state.ethnicity_category = st.selectbox(
+        'Select Ethnicity Category', 
+        list(ethnicity_options.keys()),
+        index=list(ethnicity_options.keys()).index(st.session_state.ethnicity_category)  # Set default value
+    )
+
+    # Update the ethnicity selection based on the selected category
+    if 'ethnicity' not in st.session_state or st.session_state.ethnicity not in ethnicity_options[st.session_state.ethnicity_category]:
+        # Reset ethnicity to the first option of the new category if it's not valid
+        st.session_state.ethnicity = list(ethnicity_options[st.session_state.ethnicity_category].keys())[0]
+
+    # Select ethnicity based on updated category
+    st.session_state.ethnicity = st.selectbox(
+        'Select Ethnicity', 
+        list(ethnicity_options[st.session_state.ethnicity_category].keys()),
+        index=list(ethnicity_options[st.session_state.ethnicity_category].keys()).index(st.session_state.ethnicity)  # Set default value
+    )
 
     # Retrieve and convert ethnicity code to integer
     ethnicity_code_str = ethnicity_options[st.session_state.ethnicity_category][st.session_state.ethnicity]
     st.session_state.ethnicity_code = int(ethnicity_code_str)  # Ensure it is an integer
-    # st.write(f'Ethnicity Code: {st.session_state.ethnicity_code}')
 
-    st.session_state.ethnicity_vars = {f'ethnicity_{i}': '' for i in range(31, 49)}
+    # Clear previous ethnicity selections in ethnicity_vars
+    for key in range(31, 49):  # Adjust this range according to your ethnicity codes
+        st.session_state.ethnicity_vars[f'ethnicity_{key}'] = ''  # Reset all options to empty string
 
     # Set the corresponding ethnicity variable to 'X'
     if st.session_state.ethnicity_code in range(31, 49):
         st.session_state.ethnicity_vars[f'ethnicity_{st.session_state.ethnicity_code}'] = 'X'
-    
 
-    st.session_state.ph59, st.session_state.ph60 = '',''
-    st.session_state.criminal_conviction = st.radio("Do you have a criminal conviction (excluding minor motoring offences)?", ["No", "Yes"])
+    # Reset previous selections for criminal conviction
+    st.session_state.ph59, st.session_state.ph60 = '', ''
+    if 'criminal_conviction' not in st.session_state:
+        st.session_state.criminal_conviction = "No"  # Default value
+
+    # Radio button for criminal conviction
+    st.session_state.criminal_conviction = st.radio(
+        "Do you have a criminal conviction (excluding minor motoring offences)?", 
+        ["No", "Yes"], 
+        index=["No", "Yes"].index(st.session_state.criminal_conviction)
+    )
+
     # Update the session state based on the criminal_conviction selection
     if st.session_state.criminal_conviction == "Yes":
         st.session_state.ph59 = 'x'
@@ -449,8 +617,18 @@ elif st.session_state.step == 3:
         st.session_state.ph59 = ''
         st.session_state.ph60 = 'x'
 
-    st.session_state.ph61, st.session_state.ph62 = '',''
-    st.session_state.caring_children = st.radio("Are you currently caring for children or other adults?", ["No", "Yes"])
+    # Reset previous selections for caring for children
+    st.session_state.ph61, st.session_state.ph62 = '', ''
+    if 'caring_children' not in st.session_state:
+        st.session_state.caring_children = "No"  # Default value
+
+    # Radio button for caring for children or other adults
+    st.session_state.caring_children = st.radio(
+        "Are you currently caring for children or other adults?", 
+        ["No", "Yes"], 
+        index=["No", "Yes"].index(st.session_state.caring_children)
+    )
+
     # Update the session state based on the caring_children selection
     if st.session_state.caring_children == "Yes":
         st.session_state.ph61 = 'x'
@@ -459,37 +637,58 @@ elif st.session_state.step == 3:
         st.session_state.ph61 = ''
         st.session_state.ph62 = 'x'    
 
-    if st.button("Next"):
+    # Next and Back buttons for navigation
+    next_clicked = st.button("Next")
+    back_clicked = st.button("Back")
+
+    # Handle Next button click
+    if next_clicked:
         # Proceed to the next step
         st.session_state.step = 4
         st.experimental_rerun()
 
+    # Handle Back button click
+    if back_clicked:
+        st.session_state.step = 2  # Go back to the previous step (Section 1)
+        st.experimental_rerun()
+
+
+
 elif st.session_state.step == 4:
     st.title("> 3: Emergency Contact Details")
 
-    st.session_state.emergency_contact_name = st.text_input("Emergency Contact Name")
-    st.session_state.emergency_contact_relationship = st.text_input("Emergency Contact Relationship")
-    st.session_state.emergency_contact_phone = st.text_input("Emergency Contact Mobile Number")
-    st.session_state.home_tel_no = st.text_input("Emergency Contact Home Tel No")
+    st.session_state.emergency_contact_name = st.text_input("Emergency Contact Name", value=st.session_state.emergency_contact_name)  # Set default value
+    st.session_state.emergency_contact_relationship = st.text_input("Emergency Contact Relationship", value=st.session_state.emergency_contact_relationship)  # Set default value
+    st.session_state.emergency_contact_phone = st.text_input("Emergency Contact Mobile Number", value=st.session_state.emergency_contact_phone)  # Set default value
+    st.session_state.home_tel_no = st.text_input("Emergency Contact Home Tel No", value=st.session_state.home_tel_no)  # Set default value
 
+    # Next and Back buttons for navigation
+    next_clicked = st.button("Next")
+    back_clicked = st.button("Back")
 
-    if st.button("Next"):
-            if (st.session_state.emergency_contact_name and
-                st.session_state.emergency_contact_relationship and
-                st.session_state.emergency_contact_phone and
-                st.session_state.home_tel_no
-            ):
-                st.session_state.step = 5
-                st.experimental_rerun()
-            else:
-                st.warning("Please fill in all fields before proceeding.")    
-            
+    # Handle Next button click
+    if next_clicked:
+        if (st.session_state.emergency_contact_name and
+            st.session_state.emergency_contact_relationship and
+            st.session_state.emergency_contact_phone and
+            st.session_state.home_tel_no):
+            st.session_state.step = 5
+            st.experimental_rerun()
+        else:
+            st.warning("Please fill in all fields before proceeding.")
+
+    # Handle Back button click
+    if back_clicked:
+        st.session_state.step = 3  # Go back to the previous step (Section 2)
+        st.experimental_rerun()
+
 
 elif st.session_state.step == 5:
     st.title("> 4: Prior Attainment/Highest Previous Qualifications")
 
-    # Initialize placeholders
-    st.session_state.update({f'ph{i}': '' for i in range(63, 75)})
+    # Initialize placeholders if not already done
+    if 'qualification_level' not in st.session_state:
+        st.session_state.qualification_level = None  # Default to None or some valid default
 
     # Define radio button options
     options = {
@@ -507,71 +706,81 @@ elif st.session_state.step == 5:
         "Not known": "ph74"
     }
 
+    # Retrieve the previously selected option if available
+    selected_option = None
+    for option, placeholder in options.items():
+        if st.session_state.get(placeholder) == 'X':
+            selected_option = option
+            break
+
     # Create a radio button and store 'X' in the selected placeholder
-    selected_option = st.radio("Select your qualification level:", list(options.keys()))
+    selected_option = st.radio("Select your qualification level:", list(options.keys()), index=list(options.keys()).index(selected_option) if selected_option else 0)
 
     # Update the corresponding placeholder with 'X'
     if selected_option:
-        st.session_state[options[selected_option]] = 'X'
-    
-    if st.button("Next"):
+        # Reset all placeholders before setting the current one
+        for key in options.values():
+            st.session_state[key] = ''  # Reset all qualifications to an empty string
+        st.session_state[options[selected_option]] = 'X'  # Set selected option to 'X'
+        st.session_state.qualification_level = selected_option  # Store the selected option
+
+    # Next and Back buttons for navigation
+    next_clicked = st.button("Next")
+    back_clicked = st.button("Back")
+
+    # Handle Next button click
+    if next_clicked:
         st.session_state.step = 6
         st.experimental_rerun()
+
+    # Handle Back button click
+    if back_clicked:
+        st.session_state.step = 4  # Go back to the previous step (Section 3)
+        st.experimental_rerun()
+
+
 
 elif st.session_state.step == 6:
     st.title("> 5: Employment Information")
 
     # Initialize placeholders for employment status options
-    st.session_state.update({f'ph{i}': '' for i in range(75, 84)})
-    st.session_state.update({
-        'ph79a': '',
-        'ph79b': '',
-        'ph79c': '',
-        'ph79d': '',
-    })
+    st.session_state.update({f'ph{i}': st.session_state.get(f'ph{i}', '') for i in range(75, 122)})  # Make sure all relevant placeholders are initialized
+
     # Define radio button options and corresponding placeholders
     employment_options = {
         "0 – 10 Hours (Paid employment)": "ph75",
         "11 – 20 Hours (Paid employment)": "ph76",
         "21 – 30 Hours (Paid employment)": "ph77",
         "31+ Hours (Paid employment)": "ph78",
-        
         "0 – 10 Hours (Self-employed)": "ph79a",
         "11 – 20 Hours (Self-employed)": "ph79b",
         "21 – 30 Hours (Self-employed)": "ph79c",
         "31+ Hours (Self-employed)": "ph79d",
-
         "Not in paid employment & looking for work": "ph80",
         "Not in paid employment & not looking for work": "ph81",
         "In full-time education or training prior to enrolment": "ph82"
     }
 
-    # Display radio buttons and store 'X' in the selected placeholder
-    selected_employment = st.radio("On the day prior to this course, what is your employment status? (Please tick ONE box)", list(employment_options.keys()))
+    # Retrieve the previously selected employment status if available
+    selected_employment = None
+    for option, placeholder in employment_options.items():
+        if st.session_state.get(placeholder) == 'X':
+            selected_employment = option
+            break
+
+    # Display radio buttons and set default value
+    selected_employment = st.radio(
+        "On the day prior to this course, what is your employment status? (Please tick ONE box)",
+        list(employment_options.keys()),
+        index=list(employment_options.keys()).index(selected_employment) if selected_employment else 0
+    )
 
     # Update the corresponding placeholder with 'X'
     if selected_employment:
-        st.session_state[employment_options[selected_employment]] = 'X'
-
-    # Display the placeholders for debugging 
-    # st.write({key: st.session_state[key] for key in employment_options.values()})
-
-
-    # Initialize placeholders for unemployment duration options
-    st.session_state.update({f'ph{i}': '' for i in range(83, 88)})
-    # Initialize placeholders for benefit options
-    st.session_state.update({f'ph{i}': '' for i in range(88, 93)})
-    # Initialize placeholders for employer details 
-    st.session_state.update({f'ph{i}': '' for i in range(93, 97)})
-    st.session_state.ph97y, st.session_stateph97n = '', ''
-    # Initialize placeholders for "Do you plan to work alongside the bootcamp?" options
-    st.session_state.update({f'ph{i}': '' for i in range(98, 102)})
-    # Initialize placeholders for "Please give your most recent occupation" options
-    st.session_state.update({f'ph{i}': '' for i in range(102, 112)})
-    # Initialize placeholders for "Industry/sector of current occupation" options
-    st.session_state.update({f'ph{i}': '' for i in range(112, 121)})
-    st.session_state.ph120a=''
-
+        # Reset all placeholders before setting the current one
+        for key in employment_options.values():
+            st.session_state[key] = ''  # Reset all employment options to empty string
+        st.session_state[employment_options[selected_employment]] = 'X'  # Set selected option to 'X'
 
     # Conditionally display additional sections if "Paid employment" | or "not in paid employment" is selected
     paid_employment_options = [
@@ -588,42 +797,39 @@ elif st.session_state.step == 6:
     ]
 
     if selected_employment in paid_employment_options:
-
         st.subheader("Additional Information for Paid Employment")
-        st.session_state.update({
-            'ph93': '',  # Name of Employer
-            'ph94': '',  # Employer Postcode
-            'ph95': '',  # Current Job Role
-            'ph96': '',  # Current Hourly Rate
-            'ph97y': '',   # Attending Bootcamp via Employer (Yes/No)
-            'ph97n': ''   # Attending Bootcamp via Employer (Yes/No)
-        })
-        
+
         # Additional fields for Paid Employment
-        name_of_employer = st.text_input("Name of Employer")
-        employer_postcode = st.text_input("Postcode")
-        current_job_role = st.text_input("Current Job Role")
-        current_hourly_rate = st.number_input("Current Hourly Rate", min_value=0.0, format="%.2f")
-        
+        name_of_employer = st.text_input("Name of Employer", value=st.session_state.get('ph93', ''))
+        employer_postcode = st.text_input("Postcode", value=st.session_state.get('ph94', ''))
+        current_job_role = st.text_input("Current Job Role", value=st.session_state.get('ph95', ''))
+        current_hourly_rate = st.number_input(
+            "Current Hourly Rate", 
+            min_value=0.0, 
+            format="%.2f", 
+            value=float(st.session_state.get('ph96', 0.0))  # Ensure it's always a float
+        )
+
         # Radio button for attending bootcamp via employer
         attending_via_employer = st.radio(
             "Are you attending this bootcamp via your current employer (has applicant been sent on bootcamp through their current employment)?",
-            options=["Yes", "No"]
+            options=["Yes", "No"],
+            index=0 if st.session_state.get('ph97y') == 'X' else 1  # Default based on previous selection
         )
 
-        if attending_via_employer=='Yes':
-            st.session_state.ph97y, st.session_stateph97n = 'X', ''
+        # Store selections
+        if attending_via_employer == 'Yes':
+            st.session_state.ph97y, st.session_state.ph97n = 'X', ''
         else:
             st.session_state.ph97y, st.session_state.ph97n = '', 'X'
 
-        # Save these additional inputs in session state
+        # Save additional inputs in session state
         st.session_state.ph93 = name_of_employer
         st.session_state.ph94 = employer_postcode
         st.session_state.ph95 = current_job_role
         st.session_state.ph96 = current_hourly_rate
 
-
-        # Define radio button options and corresponding placeholders
+        # Define radio button options for working alongside bootcamp
         work_alongside_bootcamp_options = {
             "Yes (Full-time employment)": "ph98",
             "Yes (Part-time employed)": "ph99",
@@ -634,25 +840,19 @@ elif st.session_state.step == 6:
         # Display radio buttons and store 'X' in the selected placeholder
         selected_work_plan = st.radio(
             "Do you plan to work alongside the bootcamp?",
-            list(work_alongside_bootcamp_options.keys())
+            list(work_alongside_bootcamp_options.keys()),
+            index=list(work_alongside_bootcamp_options.keys()).index(next(key for key, value in work_alongside_bootcamp_options.items() if st.session_state.get(value) == 'X')) if any(st.session_state.get(value) == 'X' for value in work_alongside_bootcamp_options.values()) else 0
         )
 
         # Update the corresponding placeholder with 'X'
         if selected_work_plan:
-            st.session_state[work_alongside_bootcamp_options[selected_work_plan]] = 'X'
-
-        # Display the state for debugging 
-        # st.write({
-        #     'ph98': st.session_state.ph98,
-        #     'ph99': st.session_state.ph99,
-        #     'ph100': st.session_state.ph100,
-        #     'ph101': st.session_state.ph101
-        # })
-
+            # Reset all placeholders before setting the current one
+            for key in work_alongside_bootcamp_options.values():
+                st.session_state[key] = ''  # Reset all options to empty string
+            st.session_state[work_alongside_bootcamp_options[selected_work_plan]] = 'X'  # Set selected option to 'X'
 
     if selected_employment in unpaid_employment_options:
-
-        # Define radio button options and corresponding placeholders
+        # Define radio button options for unemployment duration
         unemployment_options = {
             "Less than 6 months": "ph83",
             "6-11 months": "ph84",
@@ -662,17 +862,22 @@ elif st.session_state.step == 6:
         }
 
         # Display radio buttons and store 'X' in the selected placeholder
-        selected_unemployment = st.radio("If you are unemployed, how long have you been unemployed? (Please tick ONE box)", list(unemployment_options.keys()))
+        selected_unemployment = st.radio(
+            "If you are unemployed, how long have you been unemployed? (Please tick ONE box)",
+            list(unemployment_options.keys()),
+            index=list(unemployment_options.keys()).index(
+                next((key for key, value in unemployment_options.items() if st.session_state.get(value) == 'X'), None)
+            ) if any(st.session_state.get(value) == 'X' for value in unemployment_options.values()) else 0
+        )
 
         # Update the corresponding placeholder with 'X'
         if selected_unemployment:
-            st.session_state[unemployment_options[selected_unemployment]] = 'X'
+            # Reset all placeholders before setting the current one
+            for key in unemployment_options.values():
+                st.session_state[key] = ''  # Reset all options to empty string
+            st.session_state[unemployment_options[selected_unemployment]] = 'X'  # Set selected option to 'X'
 
-        # Display the placeholders for debugging 
-        # st.write({key: st.session_state[key] for key in unemployment_options.values()})
-
-
-        # Define radio button options and corresponding placeholders
+        # Define radio button options for benefits
         benefit_options = {
             "In receipt of JSA": "ph88",
             "In receipt of ESA (Part of WRAG group)": "ph89",
@@ -682,17 +887,22 @@ elif st.session_state.step == 6:
         }
 
         # Display radio buttons and store 'X' in the selected placeholder
-        selected_benefit = st.radio("If unemployed, please state what benefit you receive (Please tick ONE box)", list(benefit_options.keys()))
+        selected_benefit = st.radio(
+            "If unemployed, please state what benefit you receive (Please tick ONE box)",
+            list(benefit_options.keys()),
+            index=list(benefit_options.keys()).index(
+                next((key for key, value in benefit_options.items() if st.session_state.get(value) == 'X'), None)
+            ) if any(st.session_state.get(value) == 'X' for value in benefit_options.values()) else 0
+        )
 
         # Update the corresponding placeholder with 'X'
         if selected_benefit:
-            st.session_state[benefit_options[selected_benefit]] = 'X'
+            # Reset all placeholders before setting the current one
+            for key in benefit_options.values():
+                st.session_state[key] = ''  # Reset all options to empty string
+            st.session_state[benefit_options[selected_benefit]] = 'X'  # Set selected option to 'X'
 
-        # Display the placeholders for debugging 
-        # st.write({key: st.session_state[key] for key in benefit_options.values()})
-
-
-        # Define radio button options and corresponding placeholders
+        # Define radio button options for recent occupation
         recent_occupation_options = {
             "Major Group": "ph102",
             "Managers, directors and senior officials": "ph103",
@@ -709,29 +919,20 @@ elif st.session_state.step == 6:
         # Display radio buttons and store 'X' in the selected placeholder
         selected_recent_occupation = st.radio(
             "Please give your most recent occupation:",
-            list(recent_occupation_options.keys())
+            list(recent_occupation_options.keys()),
+            index=list(recent_occupation_options.keys()).index(
+                next((key for key, value in recent_occupation_options.items() if st.session_state.get(value) == 'X'), None)
+            ) if any(st.session_state.get(value) == 'X' for value in recent_occupation_options.values()) else 0
         )
 
         # Update the corresponding placeholder with 'X'
         if selected_recent_occupation:
-            st.session_state[recent_occupation_options[selected_recent_occupation]] = 'X'
+            # Reset all placeholders before setting the current one
+            for key in recent_occupation_options.values():
+                st.session_state[key] = ''  # Reset all options to empty string
+            st.session_state[recent_occupation_options[selected_recent_occupation]] = 'X'  # Set selected option to 'X'
 
-        # Display the state for debugging 
-        # st.write({
-        #     'ph102': st.session_state.ph102,
-        #     'ph103': st.session_state.ph103,
-        #     'ph104': st.session_state.ph104,
-        #     'ph105': st.session_state.ph105,
-        #     'ph106': st.session_state.ph106,
-        #     'ph107': st.session_state.ph107,
-        #     'ph108': st.session_state.ph108,
-        #     'ph109': st.session_state.ph109,
-        #     'ph110': st.session_state.ph110,
-        #     'ph111': st.session_state.ph111
-        # })
-
-
-        # Define radio button options and corresponding placeholders
+        # Define radio button options for industry/sector
         industry_sector_options = {
             "Agriculture / forestry / fishing": "ph112",
             "Distribution / hotels / restaurants": "ph113",
@@ -747,31 +948,28 @@ elif st.session_state.step == 6:
         # Display radio buttons and store 'X' in the selected placeholder
         selected_industry_sector = st.radio(
             "Industry/sector of current occupation (please give most recent occupation):",
-            list(industry_sector_options.keys())
+            list(industry_sector_options.keys()),
+            index=list(industry_sector_options.keys()).index(
+                next((key for key, value in industry_sector_options.items() if st.session_state.get(value) == 'X'), None)
+            ) if any(st.session_state.get(value) == 'X' for value in industry_sector_options.values()) else 0
         )
 
         # Update the corresponding placeholder with 'X'
         if selected_industry_sector:
-            st.session_state[industry_sector_options[selected_industry_sector]] = 'X'
-            if st.session_state.ph120=='X':
-                st.session_state.ph120a=st.text_input('Please specify below')
+            # Reset all placeholders before setting the current one
+            for key in industry_sector_options.values():
+                st.session_state[key] = ''  # Reset all options to empty string
+            st.session_state[industry_sector_options[selected_industry_sector]] = 'X'  # Set selected option to 'X'
+            
+            if st.session_state[industry_sector_options[selected_industry_sector]] == 'ph120':
+                st.session_state.ph120a = st.text_input('Please specify below', value=st.session_state.get('ph120a', ''))
 
-        # Display the state for debugging 
-        # st.write({
-        #     'ph112': st.session_state.ph112,
-        #     'ph113': st.session_state.ph113,
-        #     'ph114': st.session_state.ph114,
-        #     'ph115': st.session_state.ph115,
-        #     'ph116': st.session_state.ph116,
-        #     'ph117': st.session_state.ph117,
-        #     'ph118': st.session_state.ph118,
-        #     'ph119': st.session_state.ph119,
-        #     'ph120': st.session_state.ph120,
-        #     'ph120a': st.session_state.ph120a,
-        # })
+    # Next and Back buttons for navigation
+    next_clicked = st.button("Next")
+    back_clicked = st.button("Back")
 
-
-    if st.button("Next"):
+    # Handle Next button click with validation
+    if next_clicked:
         if selected_employment in paid_employment_options:
             if (st.session_state.ph93 and
                 st.session_state.ph94 and
@@ -784,138 +982,194 @@ elif st.session_state.step == 6:
             st.session_state.step = 7
             st.experimental_rerun()
 
-elif st.session_state.step == 7:
-    st.title("> 6: Disability, Learning Difficulty and or Health Problem")
+    # Handle Back button click
+    if back_clicked:
+        st.session_state.step = 5  # Go back to the previous step (Section 4)
+        st.experimental_rerun()
 
-    # Initialize placeholders
-    st.session_state.update({f'ph{i}': '' for i in range(121, 147)})
-    st.session_state.impactful_condition, st.session_state.confidential_interview = '',''
+
+elif st.session_state.step == 7:
+    st.title("> 6: Disability, Learning Difficulty and/or Health Problem")
+
+    # Initialize placeholders for conditions
+    st.session_state.update({f'ph{i}': st.session_state.get(f'ph{i}', '') for i in range(121, 147)})
+    st.session_state.impactful_condition = st.session_state.get('impactful_condition', '')  # Most impactful condition
+    st.session_state.confidential_interview = st.session_state.get('confidential_interview', '')  # Confidential interview request
     
     # Radio button for initial question
     difficulty_options = ["No", "Yes", "Other"]
+    
+    # Retrieve the previously selected value
+    selected_difficulty = next((key for key in difficulty_options if st.session_state.get(f'ph12{difficulty_options.index(key) + 1}') == 'X'), None)
+
+    # Display the radio buttons and set default value
     selected_difficulty = st.radio(
         "Do you consider that you have a learning difficulty, disability, or health problem?",
-        difficulty_options
+        difficulty_options,
+        index=difficulty_options.index(selected_difficulty) if selected_difficulty else 0
     )
 
     # Store 'X' in the corresponding placeholder based on the selected option
+    st.session_state.ph121, st.session_state.ph122, st.session_state.ph123 = '', '', ''  # Reset all before setting
     if selected_difficulty == "No":
         st.session_state.ph121 = 'X'
     elif selected_difficulty == "Yes":
         st.session_state.ph122 = 'X'
     elif selected_difficulty == "Other":
         st.session_state.ph123 = 'X'
-        other_specify = st.text_input("Please specify:")
-        st.session_state.ph137 = other_specify
+        other_specify = st.text_input("Please specify:", value=st.session_state.ph123a)
+        st.session_state.ph123a = other_specify
 
     # If "Yes" is selected, display individual checkboxes for each condition
     if selected_difficulty == "Yes":
         st.subheader("Please select the specific difficulty, disability, or health problem:")
 
         # Checkbox options with corresponding placeholders
-        if st.checkbox("Epilepsy"):
+        if st.checkbox("Epilepsy", value=st.session_state.ph124 == 'X'):
             st.session_state.ph124 = 'X'
-        if st.checkbox("Hearing Impairment"):
+        else:
+            st.session_state.ph124 = ''
+
+        if st.checkbox("Hearing Impairment", value=st.session_state.ph125 == 'X'):
             st.session_state.ph125 = 'X'
-        if st.checkbox("Diagnosed mental health condition"):
+        else:
+            st.session_state.ph125 = ''
+
+        if st.checkbox("Diagnosed mental health condition", value=st.session_state.ph126 == 'X'):
             st.session_state.ph126 = 'X'
-        if st.checkbox("Moderate Learning Difficulty"):
+        else:
+            st.session_state.ph126 = ''
+
+        if st.checkbox("Moderate Learning Difficulty", value=st.session_state.ph127 == 'X'):
             st.session_state.ph127 = 'X'
-        if st.checkbox("Physical Disability"):
+        else:
+            st.session_state.ph127 = ''
+
+        if st.checkbox("Physical Disability", value=st.session_state.ph128 == 'X'):
             st.session_state.ph128 = 'X'
-        if st.checkbox("Other Specific Learning Difficulty (e.g. Dyspraxia)"):
+        else:
+            st.session_state.ph128 = ''
+
+        if st.checkbox("Other Specific Learning Difficulty (e.g. Dyspraxia)", value=st.session_state.ph129 == 'X'):
             st.session_state.ph129 = 'X'
-        if st.checkbox("Profound/Complex Disabilities"):
+        else:
+            st.session_state.ph129 = ''
+
+        if st.checkbox("Profound/Complex Disabilities", value=st.session_state.ph130 == 'X'):
             st.session_state.ph130 = 'X'
-        if st.checkbox("Severe Learning Difficulty"):
+        else:
+            st.session_state.ph130 = ''
+
+        if st.checkbox("Severe Learning Difficulty", value=st.session_state.ph131 == 'X'):
             st.session_state.ph131 = 'X'
-        if st.checkbox("Social, Emotional & Behavioural Difficulties"):
+        else:
+            st.session_state.ph131 = ''
+
+        if st.checkbox("Social, Emotional & Behavioural Difficulties", value=st.session_state.ph132 == 'X'):
             st.session_state.ph132 = 'X'
-        if st.checkbox("Speech, Language and Communication needs"):
+        else:
+            st.session_state.ph132 = ''
+
+        if st.checkbox("Speech, Language and Communication needs", value=st.session_state.ph133 == 'X'):
             st.session_state.ph133 = 'X'
-        if st.checkbox("Temporary Disability after Illness or accident"):
+        else:
+            st.session_state.ph133 = ''
+
+        if st.checkbox("Temporary Disability after Illness or accident", value=st.session_state.ph134 == 'X'):
             st.session_state.ph134 = 'X'
-        if st.checkbox("Visual Impairment-excluding glasses/contact lenses"):
+        else:
+            st.session_state.ph134 = ''
+
+        if st.checkbox("Visual Impairment-excluding glasses/contact lenses", value=st.session_state.ph135 == 'X'):
             st.session_state.ph135 = 'X'
-        if st.checkbox("Prefer not to say"):
+        else:
+            st.session_state.ph135 = ''
+
+        if st.checkbox("Prefer not to say", value=st.session_state.ph136 == 'X'):
             st.session_state.ph136 = 'X'
-        if st.checkbox("Are you a wheelchair user?"):
+        else:
+            st.session_state.ph136 = ''
+
+        if st.checkbox("Are you a wheelchair user?", value=st.session_state.ph137 == 'X'):
             st.session_state.ph137 = 'X'
-        if st.checkbox("Allergy"):
+        else:
+            st.session_state.ph137 = ''
+
+        if st.checkbox("Allergy", value=st.session_state.ph138 == 'X'):
             st.session_state.ph138 = 'X'
-        if st.checkbox("Asperger’s Syndrome"):
+        else:
+            st.session_state.ph138 = ''
+
+        if st.checkbox("Asperger’s Syndrome", value=st.session_state.ph139 == 'X'):
             st.session_state.ph139 = 'X'
-        if st.checkbox("Asthma"):
+        else:
+            st.session_state.ph139 = ''
+
+        if st.checkbox("Asthma", value=st.session_state.ph140 == 'X'):
             st.session_state.ph140 = 'X'
-        if st.checkbox("Autism Spectrum Condition"):
+        else:
+            st.session_state.ph140 = ''
+
+        if st.checkbox("Autism Spectrum Condition", value=st.session_state.ph141 == 'X'):
             st.session_state.ph141 = 'X'
-        if st.checkbox("Cystic Fibrosis"):
+        else:
+            st.session_state.ph141 = ''
+
+        if st.checkbox("Cystic Fibrosis", value=st.session_state.ph142 == 'X'):
             st.session_state.ph142 = 'X'
-        if st.checkbox("Diabetes"):
+        else:
+            st.session_state.ph142 = ''
+
+        if st.checkbox("Diabetes", value=st.session_state.ph143 == 'X'):
             st.session_state.ph143 = 'X'
-        if st.checkbox("Disability Affecting Mobility"):
+        else:
+            st.session_state.ph143 = ''
+
+        if st.checkbox("Disability Affecting Mobility", value=st.session_state.ph144 == 'X'):
             st.session_state.ph144 = 'X'
-        if st.checkbox("Dyscalculia"):
+        else:
+            st.session_state.ph144 = ''
+
+        if st.checkbox("Dyscalculia", value=st.session_state.ph145 == 'X'):
             st.session_state.ph145 = 'X'
-        if st.checkbox("Dyslexia"):
+        else:
+            st.session_state.ph145 = ''
+
+        if st.checkbox("Dyslexia", value=st.session_state.ph146 == 'X'):
             st.session_state.ph146 = 'X'
+        else:
+            st.session_state.ph146 = ''
 
         # Additional text input for most impactful condition
         impactful_condition = st.text_input(
-            "If you have ticked more than one of the above, please state which disability, learning difficulty, and/or health problem impacts most on your learning:"
+            "If you have ticked more than one of the above, please state which disability, learning difficulty, and/or health problem impacts most on your learning:",
+            value=st.session_state.impactful_condition
         )
         
         # Checkbox for confidential interview request
         confidential_interview = st.checkbox(
-            "If you have a support need and would benefit from a confidential interview, please tick this box"
+            "If you have a support need and would benefit from a confidential interview, please tick this box",
+            value=st.session_state.confidential_interview == 'X'
         )
 
         # Save the text input and checkbox in session state
         st.session_state.impactful_condition = impactful_condition
         st.session_state.confidential_interview = 'X' if confidential_interview else ''
 
-    # Display the state for debugging
-    # st.write({
-    #     'ph121': st.session_state.ph121,  # No
-    #     'ph122': st.session_state.ph122,  # Yes
-    #     'ph123': st.session_state.ph123,  # Other
-    #     'ph124': st.session_state.ph124,  # Epilepsy
-    #     'ph125': st.session_state.ph125,  # Hearing Impairment
-    #     'ph126': st.session_state.ph126,  # Diagnosed mental health condition
-    #     'ph127': st.session_state.ph127,  # Moderate Learning Difficulty
-    #     'ph128': st.session_state.ph128,  # Physical Disability
-    #     'ph129': st.session_state.ph129,  # Other Specific Learning Difficulty (e.g. Dyspraxia)
-    #     'ph130': st.session_state.ph130,  # Profound/Complex Disabilities
-    #     'ph131': st.session_state.ph131,  # Severe Learning Difficulty
-    #     'ph132': st.session_state.ph132,  # Social, Emotional & Behavioural Difficulties
-    #     'ph133': st.session_state.ph133,  # Speech, Language and Communication needs
-    #     'ph134': st.session_state.ph134,  # Temporary Disability after Illness or accident
-    #     'ph135': st.session_state.ph135,  # Visual Impairment-excluding glasses/contact lenses
-    #     'ph136': st.session_state.ph136,  # Prefer not to say
-    #     'ph137': st.session_state.ph137,  # Are you a wheelchair user? + Other specify text
-    #     'ph138': st.session_state.ph138,  # Allergy
-    #     'ph139': st.session_state.ph139,  # Asperger’s Syndrome
-    #     'ph140': st.session_state.ph140,  # Asthma
-    #     'ph141': st.session_state.ph141,  # Autism Spectrum Condition
-    #     'ph142': st.session_state.ph142,  # Cystic Fibrosis
-    #     'ph143': st.session_state.ph143,  # Diabetes
-    #     'ph144': st.session_state.ph144,  # Disability Affecting Mobility
-    #     'ph145': st.session_state.ph145,  # Dyscalculia
-    #     'ph146': st.session_state.ph146,  # Dyslexia
-    #     'impactful_condition': st.session_state.impactful_condition,  # Most impactful condition
-    #     'confidential_interview': st.session_state.confidential_interview  # Confidential interview checkbox
-    # })
+    # Navigation buttons
+    next_clicked = st.button("Next")
+    back_clicked = st.button("Back")
 
-
-    if st.button("Next"):
+    # Handle Next button click
+    if next_clicked:
         if selected_difficulty == "Other":
-            if (st.session_state.ph137):
+            if st.session_state.ph123a:
                 st.session_state.step = 8
                 st.experimental_rerun()
             else:
                 st.warning("Please fill in all fields before proceeding.")
         elif selected_difficulty == "Yes":
-            if(any(st.session_state.get(f'ph{i}') == 'X' for i in range(124, 147))):
+            if any(st.session_state.get(f'ph{i}') == 'X' for i in range(124, 147)):
                 st.session_state.step = 8
                 st.experimental_rerun()
             else:
@@ -924,13 +1178,17 @@ elif st.session_state.step == 7:
             st.session_state.step = 8
             st.experimental_rerun()
 
+    # Handle Back button click
+    if back_clicked:
+        st.session_state.step = 6  # Go back to the previous step (Section 5)
+        st.experimental_rerun()
 
 elif st.session_state.step == 8:
     st.title("> 7: Contact and Marketing Information")
 
     # Initialize placeholders
-    st.session_state.update({f'ph{i}': '' for i in range(147, 154)})
-    st.session_state.other_source=''
+    st.session_state.update({f'ph{i}': st.session_state.get(f'ph{i}', '') for i in range(147, 154)})
+    st.session_state.other_source = st.session_state.get('other_source', '')  # Default for other source specification
 
     # Question: How did you hear about us?
     st.text("How did you hear about us?")
@@ -946,9 +1204,23 @@ elif st.session_state.step == 8:
         "Other Source"
     ]
 
-    selected_option = st.radio("Select an option", options)
+    # Retrieve the previously selected option
+    selected_option = next((key for key in options if st.session_state.get(f'ph147' if key == "Employer" else 
+                                                                      f'ph148' if key == "Job Centre" else 
+                                                                      f'ph149' if key == "Social Media" else 
+                                                                      f'ph150' if key == "Local Press" else 
+                                                                      f'ph151' if key == "Search Engine" else 
+                                                                      f'ph152' if key == "Friends / Family" else 
+                                                                      f'ph153' if key == "Other Source" else None) == 'X'), None)
+
+    # Display the radio buttons and set the default selection
+    selected_option = st.radio("Select an option", options, index=options.index(selected_option) if selected_option else 0)
 
     # Set the corresponding placeholder based on selection
+    # Reset all placeholders first
+    for i in range(147, 154):
+        st.session_state[f'ph{i}'] = ''  # Reset all options to empty string
+
     if selected_option == "Employer":
         st.session_state.ph147 = 'X'
     elif selected_option == "Job Centre":
@@ -963,23 +1235,16 @@ elif st.session_state.step == 8:
         st.session_state.ph152 = 'X'
     elif selected_option == "Other Source":
         st.session_state.ph153 = 'X'
-        st.session_state.other_source = st.text_input("Please specify other source:")
+        st.session_state.other_source = st.text_input("Please specify other source:", value=st.session_state.other_source)  # Set default value
 
-    # Display the state for debugging
-    # st.write({
-    #     'ph147': st.session_state.ph147,  # Employer
-    #     'ph148': st.session_state.ph148,  # Job Centre
-    #     'ph149': st.session_state.ph149,  # Social Media
-    #     'ph150': st.session_state.ph150,  # Local Press
-    #     'ph151': st.session_state.ph151,  # Search Engine
-    #     'ph152': st.session_state.ph152,  # Friends / Family
-    #     'ph153': st.session_state.ph153,  # Other Source
-    #     'other_source': st.session_state.other_source  # Other Source (specified)
-    # })
+    # Navigation buttons
+    next_clicked = st.button("Next")
+    back_clicked = st.button("Back")
 
-    if st.button("Next"):
+    # Handle Next button click
+    if next_clicked:
         if selected_option == "Other Source":
-            if (st.session_state.other_source):
+            if st.session_state.other_source:
                 st.session_state.step = 9
                 st.experimental_rerun()
             else:
@@ -988,17 +1253,22 @@ elif st.session_state.step == 8:
             st.session_state.step = 9
             st.experimental_rerun()
 
+    # Handle Back button click
+    if back_clicked:
+        st.session_state.step = 7  # Go back to the previous step (Section 6)
+        st.experimental_rerun()
+
+
 elif st.session_state.step == 9:
     st.title("> 8: Learner Declaration and Commitment")
     
     # Initialize placeholders
-    st.session_state.update({f'ph{i}': '' for i in range(154, 160)})
+    st.session_state.update({f'ph{i}': st.session_state.get(f'ph{i}', '') for i in range(154, 160)})
 
     # Agreement and Confirmation Section
     st.subheader("Agreement and Confirmation")
 
     privacy_notice = """
-
     I confirm that initial assessment and information advice and guidance concerning the course has been provided to me, this included information about the course, its entry requirements, its suitability and the support which is available to me.
 
     I agree that the information given on this agreement is true, correct and completed to the best of my knowledge and I understand that Prevista has the right to cancel my enrolment if it is found that I have provided false or inaccurate information. I agree that this information can be used to process my data for any purposes connected with my studies or my health and safety whilst on the premises. This also includes any other contractual requirements and in particular to the disclosure of all the data on this form or otherwise collected about me to the DfE for the purposes noted in the Privacy Notice in section 9.
@@ -1016,19 +1286,20 @@ elif st.session_state.step == 9:
 
     Your information may also be shared with other third parties for the above purposes, but only where the law allows it and the sharing is in compliance with data protection legislation. You can agree to be contacted for other purposes by ticking any of the following boxes:
     """
+    
     with st.container(height=600, border=True):
         st.write(privacy_notice)
 
     # Checkboxes for contact preferences
-    st.session_state.ph154 = 'X' if st.checkbox("About courses or learning opportunities") else ''
-    st.session_state.ph155 = 'X' if st.checkbox("For surveys and research") else ''
-    st.session_state.ph156 = 'X' if st.checkbox("By post") else ''
-    st.session_state.ph157 = 'X' if st.checkbox("By phone") else ''
-    st.session_state.ph158 = 'X' if st.checkbox("By email") else ''
+    st.session_state.ph154 = 'X' if st.checkbox("About courses or learning opportunities", value=st.session_state.ph154 == 'X') else ''
+    st.session_state.ph155 = 'X' if st.checkbox("For surveys and research", value=st.session_state.ph155 == 'X') else ''
+    st.session_state.ph156 = 'X' if st.checkbox("By post", value=st.session_state.ph156 == 'X') else ''
+    st.session_state.ph157 = 'X' if st.checkbox("By phone", value=st.session_state.ph157 == 'X') else ''
+    st.session_state.ph158 = 'X' if st.checkbox("By email", value=st.session_state.ph158 == 'X') else ''
 
     # Consent to filming
-    st.session_state.ph159 = 'X' if st.checkbox("I consent to being filmed for course development, evaluation, and marketing purposes", key='checkbox159') else ''
-
+    st.session_state.ph159 = 'X' if st.checkbox("I consent to being filmed for course development, evaluation, and marketing purposes", key='checkbox159', value=st.session_state.ph159 == 'X') else ''
+    
     # Display the state for debugging
     # st.write({
     #     'ph154': st.session_state.ph154,  # About courses or learning opportunities
@@ -1052,9 +1323,18 @@ elif st.session_state.step == 9:
         key="canvas",
     )
     st.session_state.signature = canvas_result.image_data
-    st.session_state.date = st.date_input("Date", help="Choose a date", format='DD/MM/YYYY')
 
-    if st.button("Submit"):
+    # Set today's date automatically and display it
+    st.session_state.date = date.today().strftime("%d-%m-%Y")
+    st.write(f"Date: **{st.session_state.date}**")
+
+    # Submit button
+    submit_clicked = st.button("Submit")
+
+###############################
+
+    # Handle Submit button click
+    if submit_clicked:
         if is_signature_drawn(st.session_state.signature) and st.session_state.date:
             time.sleep(1)
             st.write("**Thank you for completing the enrollment form!**")
@@ -1067,6 +1347,18 @@ elif st.session_state.step == 9:
         else:
             st.warning("Please provide your signature before submitting.")
 
+#111111111111111111
+    # Add a warning before the back button
+    st.info("If you go back, you will have to re-sign the form.")
+
+    # Navigation buttons
+    back_clicked = st.button("Back", disabled=st.session_state.submission_done)
+
+    # Handle Back button click
+    if back_clicked:
+        st.session_state.step = 8  # Go back to the previous step
+        st.experimental_rerun()
+#11111111111111111
 
 elif st.session_state.step == 10:
     st.info('Still Processing. . . .', icon="ℹ️")
@@ -1207,6 +1499,7 @@ with st.spinner('Wait for it...'):
             'ph121': st.session_state.ph121,  # No
             'ph122': st.session_state.ph122,  # Yes
             'ph123': st.session_state.ph123,  # Other
+            'ph123a': st.session_state.ph123a,  # Other Specify
             'ph124': st.session_state.ph124,  # Epilepsy
             'ph125': st.session_state.ph125,  # Hearing Impairment
             'ph126': st.session_state.ph126,  # Diagnosed mental health condition
@@ -1269,8 +1562,11 @@ with st.spinner('Wait for it...'):
     # Email
         # Sender email credentials
         # Credentials: Streamlit host st.secrets
-        sender_email = st.secrets["sender_email"]
-        sender_password = st.secrets["sender_password"]
+        # sender_email = st.secrets["sender_email"]
+        # sender_password = st.secrets["sender_password"]
+
+        sender_email = get_secret("sender_email")
+        sender_password = get_secret("sender_password")
 
         # Credentials: Local env
         # load_dotenv()                                     # uncomment import of this library!
@@ -1331,5 +1627,5 @@ with st.spinner('Wait for it...'):
 
 
 
-# streamlit run app.py --server.port 8505
+# streamlit run app.py
 # Dev : https://linkedin.com/in/osamatech786
